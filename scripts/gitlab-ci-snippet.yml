@@ -1,0 +1,40 @@
+# Team Standards · GitLab CI 规范检查 Job
+#
+# 拷贝以下整段到你项目的 .gitlab-ci.yml，配合本目录 team-standards-check.sh 使用。
+# 触发：仅 MR 时跑，违规直接 fail 阻断 merge。
+#
+# 前置：项目根目录有 scripts/team-standards-check.sh（由 Team Standards App 装 hook 时一起 copy 到项目）
+
+stages:
+  - lint  # 如果你已有 lint stage，这行不要重复
+
+team-standards-check:
+  stage: lint
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache bash grep git
+  script:
+    - |
+      if [ ! -x scripts/team-standards-check.sh ]; then
+        echo "✗ 缺 scripts/team-standards-check.sh"
+        echo "  在本地跑：bash install-precommit.sh"
+        echo "  然后提交 scripts/team-standards-check.sh"
+        exit 1
+      fi
+    # 拿 MR diff 涉及的所有文件
+    - |
+      DIFF_BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-HEAD~1}"
+      FILES=$(git diff --name-only "$DIFF_BASE" HEAD | grep -E '\.(go|sql|proto)$' || true)
+      if [ -z "$FILES" ]; then
+        echo "✓ 本次 MR 没修改 .go / .sql / .proto 文件，跳过"
+        exit 0
+      fi
+      echo "→ 检查文件："
+      echo "$FILES" | sed 's/^/  /'
+      echo ""
+      echo "$FILES" | xargs bash scripts/team-standards-check.sh
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      when: on_success
+    - when: never
+  allow_failure: false

@@ -1,0 +1,31 @@
+---
+description: Recognize fuzzy demo requests and generate code from demos/ templates
+alwaysApply: true
+---
+
+# Demo 触发规则
+
+当用户的请求**意图**涉及下列场景（模糊匹配即可，关键词不必完全一致），应**先参考 `demos/` 下对应模板**再产出代码，而不是从零编造。
+
+## 意图识别 → 模板映射
+
+| 用户语意（举例，不限于此） | 应参考 |
+|---|---|
+| "来个 kratos 服务"、"新服务怎么起"、"写个 main.go" | `demos/kratos-service-min.go` |
+| "wire 怎么用"、"依赖注入"、"给我 providerset" | `demos/wire-providerset.go` |
+| "kafka 发消息"、"生产者"、"publish event" | `demos/kafka-producer.go` |
+| "kafka 消费"、"consumer"、"订阅 topic" | `demos/kafka-consumer.go` |
+| "建表"、"migration"、"goose 模板"、"schema 怎么写" | `demos/pg-migration.sql` |
+| "gorm crud"、"repo 怎么写"、"游标分页"、"查询 pg" | `demos/pg-gorm-repo.go` |
+| "redis 幂等"、"加锁"、"分布式锁"、"idempotency" | `demos/redis-idempotency.go` |
+| "错误码"、"errno"、"xerror"、"返回 error 怎么写" | `demos/errno-xerror.go` |
+| "打日志"、"slog"、"trace_id 怎么加" | `demos/slog-trace.go` |
+| "单测模板"、"表驱动"、"mockgen 怎么用" | `demos/table-driven-test.go` |
+
+## 行为准则
+
+1. **先看模板，再改写**：不要抛开模板另造一套，即使能跑。
+2. **替换占位符**：`company` / `orderSvc` / `user_id` 等按用户实际业务替换。
+3. **保留 common-lib 调用**：demo 里对 `mask-go-common-lib` 的依赖是规范的一部分，不得"为了简化"换成裸库。
+4. **多场景组合**：用户同时要 Kafka 生产 + 日志追踪时，组合两份模板，保持各自的规范要点。
+5. **给出改动点**：输出代码后简述"我按你的 X 做了 A/B/C 调整"，便于用户审查。

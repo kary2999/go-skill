@@ -1,0 +1,1 @@
+../../../standards/tixuebj-template-simple.md

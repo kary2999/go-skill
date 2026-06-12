@@ -1,0 +1,32 @@
+---
+description: Prefer mask-go-common-lib over raw drivers — Kafka/Redis/logging/tracing/etc.
+globs: **/*.go
+alwaysApply: false
+---
+
+# 优先使用 mask-go-common-lib
+
+团队已封装可观测性 / 命名规范 / 错误码 / 告警等基础设施。**禁止绕过 common-lib 直连底层库**。
+
+## 替换表（裸库 → common-lib）
+
+| 禁止直接用 | 必须用 | 原因 |
+|---|---|---|
+| `fmt.Println` / `log.Printf` | `mask-go-common-lib/logging` + `slog` | 无 trace_id、非结构化 |
+| `go.opentelemetry.io/otel` 手工 init | `mask-go-common-lib/tracing.Init` | 团队统一采样策略 / propagator |
+| `sarama` / `segmentio/kafka-go` 裸客户端 | `mask-go-common-lib/mq` + `naming.TopicInProject` | 绕开命名规范 + header 注入 |
+| `go-redis` 直连 + 自己拼 key | `mask-go-common-lib/redisx.Store` | Key 命名规范强制 |
+| 自己写 middleware chain | `mask-go-common-lib/middleware` | 中间件顺序已约定 |
+| `net/http.Client{}` 裸用 | `mask-go-common-lib/httpclient.New` | 自动注入 span + 身份头 |
+| `grpc.Dial` 裸用 | `mask-go-common-lib/grpcclient.NewConn` | otelgrpc 拦截器 + metadata 透传 |
+| `errors.New` / `fmt.Errorf`（对外业务错误） | `xerror.New(errno.XxxCode)` | 错误码受控 |
+| 自建告警/Telegram | `mask-go-common-lib/alarm.NewManager` | 去重 + 多渠道 |
+| `robfig/cron` 裸用 | `mask-go-common-lib/cron`（基于 asynq） | 持久化 + 统一 handler 注册 |
+| `os.Getenv("FEATURE_X")` 直读 | `mask-go-common-lib/feature.IsEnabled` | 统一灰度 + 审计 |
+
+## 推荐模式（详见 demos/）
+
+- 启动：`config.NewFromFile → logging.New → tracing.Init → alarm.NewManager → wireApp`
+- DB / Redis 连接：走 `middleware.NewPostgres` / `middleware.NewRedis`，**不手写连接池**
+- 发 Kafka：`mq.NewProducer` + `naming.TopicInProject(env, svc, entity, action)`
+- 读 Redis：`redisx.Store.Get(ctx, biz, module, id)` — key 自动拼装

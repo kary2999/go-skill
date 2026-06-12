@@ -1,0 +1,37 @@
+---
+description: CI pipeline stages and quality gates (reference — read when asked)
+alwaysApply: false
+---
+
+# CI Pipeline（参考）
+
+## 阶段
+```
+validate → build → test → scan → package → deploy
+```
+| 阶段 | 内容 | 失败影响 |
+|---|---|---|
+| validate | Lint、commitlint、命名检查 | 阻塞 |
+| build | 编译 | 阻塞 |
+| test | 单测 + 覆盖率 | 阻塞 |
+| scan | SAST + 依赖漏洞 + 容器扫描 | Critical/High 阻塞 |
+| package | Docker 构建 + 推 Harbor | 阻塞 |
+| deploy | Dev/Staging 自动；Prod 手动审批 | 不阻塞 |
+
+## 共享模板（GitLab CI Include）
+服务引用 `infra/ci-templates` 仓下的 `go.yml` / `security.yml` / `docker.yml` / `deploy.yml`。
+
+## MR 合并门禁（必须全部通过）
+- Pipeline 全绿
+- 覆盖率达标（Go ≥ 80%、React ≥ 70%、Flutter ≥ 70%）
+- 零 Critical/High 漏洞
+- Code Review Approved
+- Commit Message 合规
+
+## 主干保护
+`main` / `master` 为 Protected，禁止直 push，必须走 MR。
+
+## 性能目标
+- MR Pipeline ≤ 10 分钟
+- 主干 Pipeline ≤ 15 分钟
+- 构建缓存命中率 ≥ 80%

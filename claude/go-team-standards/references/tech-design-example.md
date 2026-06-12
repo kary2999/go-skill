@@ -1,0 +1,1 @@
+../../../standards/tech-design-example.md

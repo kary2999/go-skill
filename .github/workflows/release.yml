@@ -1,0 +1,90 @@
+name: Build DMG Release
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # 每日 10:00 (UTC+8) 检查 VERSION，有新版本自动打包发布
+  workflow_dispatch:        # 手动触发
+  push:
+    tags: ['v*']            # 打 tag 立即构建
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 读取版本并检查是否已发布（幂等）
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          TAG="v${VERSION}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG 已存在，跳过构建"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-go@v5
+        if: steps.ver.outputs.skip == 'false'
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: 装 Pillow（App 图标生成用，失败不阻塞）
+        if: steps.ver.outputs.skip == 'false'
+        run: pip3 install --break-system-packages pillow || pip3 install pillow || true
+
+      - name: 构建 Team Standards.app（Universal Binary）
+        if: steps.ver.outputs.skip == 'false'
+        run: |
+          # defaults_local.go 在 .gitignore（本地开发可内嵌 key）。
+          # 公开发布的 DMG 禁止内嵌任何 key —— 用空 key 模板编译，用户在 App 里自行填写。
+          cp defaults_local.go.example defaults_local.go
+          bash build-mac-app.sh
+
+      - name: 打包 DMG
+        if: steps.ver.outputs.skip == 'false'
+        run: |
+          DMG="TeamStandards-${{ steps.ver.outputs.tag }}.dmg"
+          mkdir -p dmg-root
+          ditto "Team Standards.app" "dmg-root/Team Standards.app"
+          ln -s /Applications dmg-root/Applications
+          hdiutil create -volname "Team Standards" -srcfolder dmg-root -ov -format UDZO "$DMG"
+          echo "DMG=$DMG" >> "$GITHUB_ENV"
+          ls -la "$DMG"
+
+      - name: 提取 CHANGELOG 本版本内容
+        if: steps.ver.outputs.skip == 'false'
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          awk "/^## \[${V}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md | sed '/^$/d' > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "Team Standards ${{ steps.ver.outputs.tag }}（自动构建）" > release-notes.md
+          fi
+          cat release-notes.md
+
+      - name: 创建 GitHub Release 并上传资产
+        if: steps.ver.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Team Standards ${{ steps.ver.outputs.tag }}" \
+            --notes-file release-notes.md \
+            --target "$GITHUB_SHA" \
+            "$DMG" \
+            scripts/upgrade-helper.sh
+          echo "✅ Release ${{ steps.ver.outputs.tag }} 已发布"

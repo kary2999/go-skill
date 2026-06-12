@@ -1,0 +1,26 @@
+{
+  "name": "GoSkill",
+  "short_name": "GoSkill",
+  "description": "Go 微服务团队规范 · 工程红线 · AI 协作提示词",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f4f7",
+  "theme_color": "#5856d6",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["developer", "productivity"],
+  "lang": "zh-CN"
+}

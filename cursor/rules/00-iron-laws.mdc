@@ -1,0 +1,63 @@
+---
+description: Team iron laws — always apply. Security, money, time, errors, concurrency, timeouts, metric cardinality. Every violation must be explained WHY.
+alwaysApply: true
+globs:
+  - "**/*.go"
+  - "**/*.sql"
+  - "**/*.proto"
+  - "**/go.mod"
+  - "**/go.sum"
+  - "**/Dockerfile"
+  - "**/Makefile"
+---
+
+# 团队铁律（永远生效）
+
+## 铁律清单（每条都带"为什么"）
+
+| # | 规则 | 为什么（违反的后果） |
+|---|---|---|
+| 1 | 禁止硬编码密钥（私钥、助记词、API Key、DB 连接串、生产地址）→ 走 env/config | 硬编码一旦入库就永远留在 git 历史；泄露到公网 = 资金被盗 / 账号被盗 |
+| 2 | 业务错误必须 `xerror.New(errno.XxxCode)`；禁止 `errors.New("...")` / 裸数字码 | 错误码是受控元数据：日志聚合、前端国际化、监控告警都按码走；裸字符串让这些全部失效 |
+| 3 | error 必检；禁用 `_` 丢弃；跨层用 `fmt.Errorf("ctx: %w", err)` | 丢 err 等于生产事故无线索；`%w` 保留错误链，上层才能 `errors.Is/As` 判断 |
+| 4 | 业务代码禁用 `panic`；仅允许 `init()` / 启动阶段 | panic 会让整个进程挂掉，影响该实例上所有请求；受 K8s 调度时还会触发滚动重启 |
+| 5 | goroutine 必须有退出机制（`context` / `errgroup`）；禁止裸 `go func()` | 裸 goroutine = 泄漏；长期运行的服务 goroutine 数会线性增长直到 OOM |
+| 6 | 金额/数量用 `decimal.Decimal`（DB `DECIMAL(28,8)`）；禁止 `float64` | 浮点精度丢失在交易场景不可接受（0.1 + 0.2 ≠ 0.3），会导致账务对不平 |
+| 7 | 时间存 `TIMESTAMPTZ(6)` UTC；对外 ISO 8601；禁止存本地时间 / 时区字符串 | 跨地区用户 + 跨 DC 部署下，本地时间会在边界日产生一天差；夏令时切换还会出现重复/消失时间 |
+| 8 | 日志只用 `slog`，结构化、snake_case 字段，必带 `trace_id` / `span_id`；禁止 `fmt.Println` | 非结构化日志无法按字段查询；没有 trace_id 无法跨服务还原调用链 |
+| 9 | SQL 禁止 `SELECT *`；禁止循环内查询（N+1）；分页用游标 | SELECT * 导致新增列后老代码拉多余数据、占带宽、破坏协议；OFFSET 大翻页 O(N) 扫描 |
+| 10 | DB 禁止数据库级外键；关联由应用层维护 | 外键阻塞分库分表和 DDL；高并发写入时会成为瓶颈；主从延迟下外键检查还可能误判 |
+| 11 | 禁止提交被注释掉的代码 | 代码冗余噪声；失去追溯价值（Git 已记录历史）；Review 时浪费时间 |
+| 12 | 敏感数据（手机号、邮箱、身份证、卡号、私钥、token）禁入 prompt / 日志 / 测试数据 | 日志进 Loki / ES 等长期存储；AI prompt 可能回传；测试 fixture 可能被开源 → GDPR / 合规事故 |
+| 13 | 所有外部 IO（HTTP / DB / MQ / Redis）必带超时 + 必传递 ctx；trace_id/span_id 必须串通 | 无超时 = 上游慢调用穿透到本服务 → 连锁雪崩；ctx 断链 = 分布式追踪失效，事故排查只能靠猜 |
+| 14 | Prometheus metric label 基数 ≤ 100；禁用 user_id / trace_id / order_id / email 作 label | 高基数 label = series 指数爆炸 → Prometheus 内存/磁盘爆掉 → 全链路监控 OOM |
+
+---
+
+## 反馈原则（**AI 指出违规时必须遵守**）
+
+当你发现代码违反上述任何一条时，**禁止只说"改成 X"**。必须按三段式回复：
+
+1. **哪条规则**：引用铁律编号或规则名（例如"铁律 6 / 金额必须 decimal"）
+2. **为什么**：说明违反会导致什么后果（参考上表"为什么"列；若不止一种影响，列全）
+3. **怎么改**：给出修正代码
+
+### 示例（好的反馈）
+
+> 发现违反**铁律 2**（错误码体系）和**铁律 9**（禁止 SELECT *）。
+>
+> **为什么**：
+> - `errors.New("order not found")` 是裸字符串，Loki 无法按 error_code 聚合过滤，前端也无法做国际化映射。
+> - `SELECT *` 在后续给 `orders` 表加新字段（比如 `risk_result`）后会自动拉大字段，浪费带宽且破坏了隐式协议契约。
+>
+> **改为**：
+> ```go
+> db.Select("id, user_id, status").Where("id = ?", id).First(&o)
+> if errors.Is(err, gorm.ErrRecordNotFound) {
+>     return nil, xerror.New(errno.OrderNotFound)
+> }
+> ```
+
+### 示例（不合格的反馈）
+
+> ~~应该改成 `xerror.New(...)`。~~  ← 只说"改"，没说"为什么"

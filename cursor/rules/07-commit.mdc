@@ -1,0 +1,56 @@
+---
+description: Git commit message — Conventional Commits enforced by commitlint
+alwaysApply: false
+---
+
+# Commit Message 规范
+
+## 格式
+```
+<type>(<scope>): <subject>
+
+[可选 body]
+
+[可选 footer]
+```
+
+## type（必填）
+`feat` | `fix` | `docs` | `style` | `refactor` | `perf` | `test` | `build` | `ci` | `chore` | `revert`
+
+## scope（推荐）
+`trading` | `wallet` | `account` | `risk` | `matching` | `gateway` | `common` | `infra` | `ci` | `docs`
+
+## subject（必填）
+- **英文、小写**
+- ≤ 72 字符
+- 祈使语气（`add`，不是 `added`/`adds`）
+- 不以句号结尾
+
+## body（大变更必填）
+- 解释 **Why**，不是 What
+- 每行 ≤ 100 字符
+- 与 subject 空一行
+
+## footer
+- 关联 Issue：`Closes #123` / `Refs #456`
+- 破坏性：`BREAKING CHANGE: <描述>`（type 后带 `!` 也可：`feat(api)!:`）
+
+## 示例
+```
+feat(wallet): add multi-chain deposit address generation
+
+Support generating deposit addresses for ETH, BSC, and Polygon
+networks. Each address is derived from the user's master key using
+BIP-44 path derivation.
+
+Closes #789
+```
+
+## 禁止
+- ❌ 中文 commit message
+- ❌ 无意义信息：`update`、`fix bug`、`wip`、`test`
+- ❌ 单次超过 500 行（应拆分）
+- ❌ 混合变更（一个 commit 多个不相关修改）
+
+## CI 自动检测
+commitlint 在 MR Pipeline 校验，不合规直接拒绝。

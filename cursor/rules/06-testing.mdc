@@ -1,0 +1,50 @@
+---
+description: Unit testing — coverage, table-driven, mocking, naming
+globs: **/*_test.go
+alwaysApply: false
+---
+
+# 单元测试规范
+
+## 覆盖率门禁
+| 技术栈 | 新代码 | 整体 | 核心模块 |
+|---|---|---|---|
+| Go | ≥80% | ≥70% | ≥90% |
+| React | ≥70% | ≥60% | ≥85% |
+| Flutter | ≥70% | ≥60% | ≥85% |
+核心模块：撮合、钱包转账、风控引擎、资金结算。
+
+## Go
+- 框架：`testing` + `testify/assert`
+- Mock：`go.uber.org/mock` (mockgen)；HTTP Mock：`httptest`
+- **表驱动测试为强制模式**：
+```go
+tests := []struct {
+    name    string
+    input   T
+    want    T
+    wantErr bool
+}{ ... }
+for _, tt := range tests {
+    t.Run(tt.name, func(t *testing.T) { ... })
+}
+```
+- Mock 只打外部依赖（DB、HTTP、MQ），**不 Mock 内部逻辑**
+- Mock 接口定义放使用方，由 mockgen 生成
+- 验证 Mock 调用次数和参数
+
+## 命名
+`Test{被测对象}_{场景}_{期望}`
+- `TestOrderService_CreateOrder_Success`
+- `TestOrderService_CreateOrder_InsufficientBalance_ReturnsError`
+
+## 数据
+- Factory 模式创建测试数据，**禁止硬编码**
+- 测试互相独立，不依赖执行顺序
+- 清理副作用（DB 记录、临时文件）
+- **禁止敏感数据**（私钥、真实地址、真实 PII）
+
+## CI
+- 每个 MR Pipeline 自动运行
+- 覆盖率下降 >2% 触发警告
+- 核心模块覆盖率低于阈值 → 阻塞合并

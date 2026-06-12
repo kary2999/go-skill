@@ -1,0 +1,22 @@
+---
+description: Cursor / AI coding safety — data isolation, privacy, review gates
+alwaysApply: true
+---
+
+# Cursor / AI 使用安全红线
+
+## 数据安全
+1. **核心代码隔离**：`.cursorignore` 屏蔽撮合引擎、冷热钱包、风控算法等核心目录（见 `.cursorignore.template`）。
+2. **输入脱敏**：严禁在 prompt 粘贴私钥、助记词、API Key、DB 连接串、生产 PII / 成交数据。
+3. **Privacy Mode**：企业后台强制 ZDR，禁止模型侧持久化。
+4. **禁用 AI 自动终端执行**，写操作必须人工确认。
+5. **插件白名单**：禁用未经安全委员会审计的第三方 MCP 插件。
+
+## 代码产出
+- AI 生成代码**严禁直接合并主干**，必须经人工 Code Review。
+- 资金逻辑（资产划转、账务平衡、清结算）必须"人工 Review + SAST"双重加固。
+- 使用"代码归因查看"追溯 AI 生成过程。
+
+## 项目规则
+- 由架构师维护 `.cursorrules` / `.cursor/rules/`，定义团队风格与命名。
+- 公司 SDK / 内部框架文档导入 Cursor 内部资源库，供 AI 学习。

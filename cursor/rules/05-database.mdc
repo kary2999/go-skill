@@ -1,0 +1,100 @@
+---
+description: PostgreSQL schema design, naming, migrations, query rules
+globs: migrations/**, **/*.sql, **/model.go, **/data/**
+alwaysApply: false
+---
+
+# 数据库规范（PostgreSQL）
+
+## 命名通则
+- 全 `snake_case` 小写；长度 ≤ 63 字符
+- 禁止保留字（`order`、`user`、`group`、`date`、`value` …），可查 `SELECT pg_get_keywords();`
+- 禁止特殊字符、非英文字母、`pg_`/`_` 开头
+- 禁止匈牙利前缀（`tbl_`、`col_`）
+- 禁止英数字无意义混杂（`order1`、`table2`）
+
+## Database / Schema
+- Database：`{业务线}_{用途}` → `exchange_main`；分片 `_shard` 后缀
+- Schema 按业务模块：`trade` / `wallet` / `auth` / `market` / `risk` / `audit`
+- **禁止在 `public` 建业务表**；`search_path` 显式设置
+- `audit` schema 只追加，禁止修改
+
+## 表命名（前缀即类型）
+| 前缀 | 类型 | 示例 |
+|---|---|---|
+| 无 | 核心业务 | `trade.orders`, `wallet.balances` |
+| `dim_` | 维度 | `dim_user_profile` |
+| `agg_` | 聚合统计 | `agg_trade_volume_daily` |
+| `cfg_` | 配置 | `cfg_fee_rules` |
+| `log_` | 事件日志（只追加） | `log_order_audit` |
+| `hist_` | 历史快照（只追加） | `hist_account_balance` |
+| `rel_` | 多对多（按字母序） | `rel_user_role` |
+| `tmp_` | 临时（带时间粒度） | `tmp_settlement_batch` |
+| `v_` / `mv_` | 视图 / 物化视图 | `v_active_orders` |
+| `<主表>_ext` | 垂直拆分扩展 | `users_ext` |
+- 分区子表 `{父表}_{分区特征}` → `orders_2024q1`
+
+## 字段
+- 主键：`id BIGINT GENERATED ALWAYS AS IDENTITY PK`（或 UUID）
+- 逻辑外键：`{关联表单数}_id` → `order_id`（用户字段统一 `uid`，禁 `user_id`）
+- **禁止**数据库级 `FOREIGN KEY`
+- 字段名**不含**所在表名（`users.name` ✓，`users.user_name` ✗；关联字段除外）
+- **业务字段默认 NOT NULL**（除 `TEXT` 类型字段和 `deleted_at`）
+- 必备字段：`created_at` / `updated_at` / `deleted_at`（软删，允许 NULL）/ `created_by` / `updated_by`
+- 语义后缀：`_at`(TIMESTAMPTZ) / `_date` / `_amount` / `_count` / `_status` / `_type`；布尔 `is_`/`has_` 前缀
+- **只软删**：`deleted_at`，禁止物理删除
+
+## 字段类型
+| 场景 | 类型 |
+|---|---|
+| 时间戳 | `TIMESTAMPTZ(6)` UTC |
+| 纯日期 | `DATE` |
+| 金额/数量 | `DECIMAL(28,8)` — **禁止 FLOAT/DOUBLE** |
+| 枚举/状态 | `SMALLINT` + 代码常量（**禁止 ENUM 类型**），`0` 保留给未知 |
+| 定长字符串 | `CHAR(n)` |
+| 变长 | `VARCHAR(n)`（必须明确长度） |
+| 大文本 | `TEXT`（仅备注/日志；查询条件字段必须 `VARCHAR`） |
+| JSON | `JSONB`（**禁止 JSON**）；仅非核心扩展属性，≤ 64KB，不作主要查询条件 |
+
+## 索引
+- 关联字段（`uid` / `order_id` 等）必加索引
+- WHERE / ORDER BY 高频字段加索引
+- 单表 ≤ 8 个索引；组合遵循最左前缀
+- 高基数差字段（如 `status`）不建普通索引
+- 命名：`uk_{表}_{字段}` 唯一 / `idx_{表}_{字段}` 普通 / `ck_{表}_{字段}` check
+
+## 注释
+所有生产表/字段必须 `COMMENT`；状态类字段枚举值必须列全。
+
+## Migration
+- 工具：`golang-migrate` 或 `goose`，目录 `migrations/`
+- 文件名：`000001_xxx.up.sql` / `000001_xxx.down.sql`（必须成对）
+- **禁止修改已发布 Migration**；每次变更独立文件
+- 大表 DDL（>100 万行）用 `gh-ost` / `pt-online-schema-change`
+- 数据回填与 DDL 分开 Migration
+- **生产环境禁止人工 DDL**
+
+## 审批
+| 变更 | 审批 |
+|---|---|
+| 新增表 | Tech Lead |
+| 新增字段/索引 | 同组 Review |
+| 改字段类型 | Tech Lead + DBA |
+| 删表/字段 | Tech Lead + DBA + 产品 |
+| 大表变更 | DBA 专项 |
+
+## 查询
+- **禁止 `SELECT *`**
+- 禁止循环内查询（N+1）→ 批量 / JOIN
+- 大分页用游标（`WHERE id > ? LIMIT ?`），禁止大 OFFSET
+- 事务最小化，持锁时间尽量短
+- 慢查询阈值 200ms
+
+## Role
+- 按服务粒度；格式 `{服务名}_{级别}` → `trade_service_read` / `trade_service_write`
+- 禁止多服务共用 Role；流复制 Role 固定 `replication`
+
+## 安全
+- 敏感字段（手机号/身份证/银行卡）加密存储
+- 生产禁止开发直连，走堡垒机 + 审计日志
+- 备份：全量每日 + 增量每小时，保留 30 天

@@ -1,0 +1,1 @@
+{"core_installed":0,"core_total":6,"framework_ready":false,"has_old_simple":false,"install_command":"npx --yes get-shit-done-cc@latest --claude --global","installed_count":0,"installed_skills":null,"node_version":"v25.9.0","npx_available":true,"npx_path":"/opt/homebrew/bin/npx","upstream":"https://github.com/gsd-build/get-shit-done"}

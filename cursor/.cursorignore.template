@@ -1,0 +1,26 @@
+# 团队 Cursor 核心代码隔离清单（对应 cursor-usage.md §6.1）
+# 落地时按项目实际目录调整后，提交至仓库根为 .cursorignore
+
+# 资金与撮合核心
+internal/matching/
+internal/wallet/hot/
+internal/wallet/cold/
+internal/settlement/
+
+# 风控 / 反洗钱
+internal/risk/
+internal/aml/
+
+# 密钥与签名
+internal/kms/
+internal/signer/
+**/keystore/
+
+# 敏感配置
+configs/prod/
+configs/**/secrets/
+**/*.key
+**/*.pem
+.env
+.env.*
+!.env.example

@@ -1,0 +1,53 @@
+---
+description: API design — RESTful + gRPC, URLs, response shape, versioning, security
+globs: **/*.proto, **/handler/**, **/service/**, **/server/**
+alwaysApply: false
+---
+
+# API 设计
+
+## RESTful
+- URL 小写 + `kebab-case`：`/api/v1/trade-orders`
+- 资源复数名词：`/users`、`/orders`
+- 层级关系走路径：`/users/{userId}/orders`
+- 动作用 HTTP Method 表达（**禁止** `POST /api/v1/createOrder`、`GET /getOrderList`）
+
+### 统一响应
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": { ... },
+  "timestamp": 1712649600000,
+  "traceId": "abc123def456"
+}
+```
+- 分页 `{ items, pagination: { page, pageSize, total, totalPages } }`
+- 时间戳 Unix 毫秒
+- 错误码走 `errno` 体系（见 `03-error-codes.mdc`）
+- 每个响应**必须**带 `traceId`（OTel 上下文）
+
+### HTTP 状态码
+200 / 201 / 204 / 400 / 401 / 403 / 404 / 409 冲突 / 422 业务拒绝 / 429 限流 / 500
+
+### 版本
+- 路径版本 `/api/v1/`；破坏性变更才升版本
+- 废弃需 6 个月过渡，提前 3 个月通知
+
+## gRPC
+- package：`clawnova.<service>.<version>`
+- service：`XxxService`；method `VerbNoun`（`CreateOrder`）
+- 请求/响应：`MethodNameRequest` / `MethodNameResponse`
+- 字段 `snake_case`
+- **禁止**删除/重命名字段、改类型/编号；废弃用 `reserved`
+
+## 安全
+- 外部 JWT Bearer，Access Token ≤ 30 分钟
+- 内部 gRPC mTLS + 服务账号（Istio）
+- 敏感操作（提现、改安全设置）需 2FA
+- 限流走 Istio RateLimit，触发 429 + `Retry-After`
+- 敏感字段（手机号/邮箱/身份证）输出脱敏；日志禁止密码/Token/私钥
+- 对外强制 HTTPS / TLS 1.3
+
+## 文档
+- OpenAPI 3.0；proto 必须有注释；CHANGELOG 记录变更；废弃标 `Deprecated`。

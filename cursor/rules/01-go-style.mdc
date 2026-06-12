@@ -1,0 +1,67 @@
+---
+description: Go coding style — layout, naming, concurrency, comments, lint
+globs: **/*.go
+alwaysApply: false
+---
+
+# Go 编码风格
+
+## 项目结构（微服务统一布局）
+```
+cmd/                 # main + wire（仅 DI + 启动）
+api/<svc>/v1/        # buf generate 产物
+internal/
+  biz/               # 领域 + usecase（无框架依赖）
+  data/              # repo 实现（DB/Redis/Kafka）
+  service/           # proto ↔ biz 适配
+  server/            # HTTP/gRPC 初始化
+  conf/              # 配置
+migrations/
+configs/
+```
+分层：`service → biz → data`，禁止反向依赖。`cmd/` 不含业务。
+
+## 命名
+- package：小写单数名词，禁止 `util` / `common` / `helper` / `utils` / `models`
+- 文件：`snake_case.go`，测试 `*_test.go`
+- 导出 `PascalCase`；非导出 `camelCase`；缩写保持全大/全小（`JSONProcessor` ✓）
+- 接收者 1–2 字母缩写：`func (s *Service) ...`
+- 布尔：`is` / `has` / `can` 前缀
+- 接口：单方法 `-er` 后缀；多方法用名词（`OrderRepository`）；**定义在使用方**
+- 常量枚举：`type XxxStatus int` + `iota + 1`，保留 `0` 给未知
+
+## 错误处理
+```go
+// ✓
+result, err := repo.GetOrder(ctx, id)
+if err != nil {
+    return nil, fmt.Errorf("get order %s: %w", id, err)
+}
+```
+业务错误走 `xerror.New(errno.XxxCode)`；禁止裸 `errors.New` 和数字错误码。业务代码禁用 `panic`。
+
+## 并发
+- 必须用 `errgroup` 或封装函数管理 goroutine 生命周期，带 `context`。
+- channel 优先于 mutex；禁止持锁 I/O。
+
+## 依赖注入
+- 构造函数 `NewXxx`；禁止全局变量。
+
+## 日志
+- 统一 `slog`，`InfoContext` / `ErrorContext` 携带 `ctx`；字段 `snake_case`。
+- 必带 `trace_id` / `span_id`（OTel 提取）。
+
+## 注释
+- 中文；解释 **Why** 不是 What。
+- 所有导出标识符必须有注释，以标识符名开头（`CreateOrder 创建一笔订单…`）。
+- 包注释 `// Package <name> …`。
+- 禁止：复述代码的废话、注释掉的代码、装饰性分隔线、日志式注释（`// 张三 2024-03 添加`）。
+- `TODO(owner): 2025-06 前迁移…` / `FIXME(owner): …` / `HACK: …`。
+
+## 性能
+- DB 查询必须设 context timeout。
+- HTTP client 必须设超时 + 连接池上限。
+- 循环内禁止 DB 查询；大批量用 stream / 分批。
+
+## Lint
+项目根必须有 `.golangci.yml`（见 `assets/.golangci.yml`）。CI 未过 `golangci-lint` 不得合并。

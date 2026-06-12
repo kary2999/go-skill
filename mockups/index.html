@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>团队规范 · Apple 风（1100×760 实际尺寸）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sys-blue: #007AFF; --sys-blue-light: #5AC8FA;
+    --sys-green: #34C759; --sys-red: #FF3B30;
+    --sys-orange: #FF9500; --sys-yellow: #FFCC00;
+    --sys-purple: #AF52DE; --sys-pink: #FF2D55;
+    --sys-indigo: #5856D6; --sys-teal: #5AC8FA; --sys-mint: #00C7BE;
+
+    --label: #1d1d1f;
+    --label-2: rgba(60, 60, 67, 0.85);
+    --label-3: rgba(60, 60, 67, 0.60);
+    --label-4: rgba(60, 60, 67, 0.30);
+
+    --bg-window: rgba(246,246,248,0.65);
+    --bg-sidebar: rgba(245,245,247,0.40);
+    --bg-card: rgba(255,255,255,0.70);
+    --bg-card-2: rgba(255,255,255,0.55);
+    --bg-row-hover: rgba(0,0,0,0.04);
+    --bg-row-selected: rgba(0,122,255,0.10);
+    --separator: rgba(60,60,67,0.12);
+
+    --sf: -apple-system, BlinkMacSystemFont, "PingFang SC", "SF Pro Text",
+          "SF Pro Display", "Helvetica Neue", "Inter", sans-serif;
+    --sf-display: -apple-system, BlinkMacSystemFont, "PingFang SC",
+                  "SF Pro Display", "Inter", sans-serif;
+    --mono: "SF Mono", ui-monospace, "JetBrains Mono", Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale; }
+  html, body { margin:0; padding:0; }
+  body {
+    font-family: var(--sf); color: var(--label);
+    background: #1d1d1f; min-height: 100vh;
+    padding: 40px;
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+  .ruler { color: rgba(255,255,255,0.5); font-size: 12px; font-family: var(--mono); display: flex; gap: 20px; }
+  .ruler b { color: white; font-weight: 500; }
+
+  /* 主窗口 1100×760 */
+  .window {
+    width: 1100px; height: 760px; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(255,255,255,0.18);
+    background:
+      radial-gradient(ellipse 60% 40% at 8% 8%, rgba(255,149,0,0.20) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 100% 0%, rgba(255,45,85,0.18) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(0,122,255,0.18) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(175,82,222,0.18) 0%, transparent 55%),
+      linear-gradient(135deg, #f5f5f7 0%, #e8e8ed 100%);
+    position: relative;
+    display: grid; grid-template-columns: 240px 1fr;
+  }
+
+  /* 标题栏 */
+  .titlebar {
+    position: absolute; top: 0; left: 0; right: 0; height: 38px; z-index: 100;
+    display: flex; align-items: center; padding: 0 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.20), transparent);
+  }
+  .traffic-lights { display: flex; gap: 8px; }
+  .tl { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.1); }
+  .tl.close { background: #FF5F57; } .tl.min { background: #FEBC2E; } .tl.max { background: #28C840; }
+  .titlebar .title {
+    flex: 1; text-align: center; font-size: 13px; font-weight: 600;
+    color: var(--label-2); letter-spacing: -0.005em;
+  }
+  .titlebar .title-icon {
+    display: inline-block; width: 14px; height: 14px; border-radius: 4px;
+    background: linear-gradient(135deg, #007AFF, #AF52DE);
+    margin-right: 6px; vertical-align: -2px;
+  }
+
+  /* 侧栏 */
+  .sidebar {
+    background: var(--bg-sidebar);
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border-right: 0.5px solid var(--separator);
+    padding: 46px 14px 20px; overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { width: 0; }
+  .side-search { margin: 4px 6px 14px; position: relative; }
+  .side-search input {
+    width: 100%; height: 28px; padding: 0 10px 0 28px;
+    background: rgba(255,255,255,0.50); border: 0.5px solid var(--separator);
+    border-radius: 7px; font-family: var(--sf); font-size: 13px; color: var(--label);
+    outline: none; box-shadow: 0 0 0 0.5px rgba(255,255,255,0.6) inset;
+  }
+  .side-search input::placeholder { color: var(--label-3); }
+  .side-search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+                       color: var(--label-3); width: 13px; height: 13px; }
+  .side-section { margin-bottom: 14px; }
+  .side-section-h { font-size: 11px; font-weight: 500; color: var(--label-3);
+                     padding: 4px 10px; letter-spacing: 0.02em; }
+  .side-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 10px; margin: 1px 0; border-radius: 7px;
+    font-size: 13px; color: var(--label); cursor: pointer; user-select: none;
+    transition: background 0.1s;
+  }
+  .side-item:hover { background: var(--bg-row-hover); }
+  .side-item.active { background: var(--bg-row-selected); color: var(--sys-blue); }
+  .side-item.active .side-icon { color: white; }
+  .side-icon {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 0 0 0.5px rgba(0,0,0,0.05) inset;
+  }
+  .side-icon svg { width: 13px; height: 13px; stroke-width: 2; }
+  .side-item .ct { margin-left: auto; font-size: 11px; color: var(--label-3);
+                    font-feature-settings: "tnum"; }
+  .side-item.active .ct { color: var(--sys-blue); }
+
+  /* 主区 */
+  .main { overflow-y: auto; padding-top: 38px; position: relative; }
+  .main::-webkit-scrollbar { width: 6px; }
+  .main::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+  .page { display: none; padding: 24px 32px 40px; }
+  .page.active { display: block; }
+  .h1 { font-family: var(--sf-display); font-size: 28px; font-weight: 700;
+        letter-spacing: -0.022em; line-height: 1.15; margin: 0 0 6px; }
+  .lead { font-size: 14px; color: var(--label-2); margin: 0 0 24px;
+          line-height: 1.5; max-width: 600px; }
+
+  /* Segmented control */
+  .seg { display: inline-flex; padding: 2px;
+         background: rgba(120,120,128,0.16); border-radius: 9px;
+         margin-bottom: 24px; }
+  .seg-item { padding: 5px 14px; font-size: 12.5px; font-weight: 500;
+              color: var(--label); border-radius: 7px; cursor: pointer;
+              transition: all 0.15s; white-space: nowrap; }
+  .seg-item.active { background: white; color: var(--label);
+                     box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04); }
+
+  /* 卡片 */
+  .card { background: var(--bg-card);
+          backdrop-filter: blur(40px) saturate(180%);
+          -webkit-backdrop-filter: blur(40px) saturate(180%);
+          border-radius: 12px;
+          box-shadow: 0 0 0 0.5px var(--separator), 0 1px 0 rgba(255,255,255,0.5) inset;
+          overflow: hidden; margin-bottom: 16px; }
+  .card-h { padding: 12px 16px 8px; font-size: 11px; color: var(--label-3); font-weight: 500;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            display: flex; align-items: baseline; gap: 8px; }
+  .card-h .ct { margin-left: auto; font-size: 11px; color: var(--label-3);
+                text-transform: none; letter-spacing: 0; }
+
+  /* Row */
+  .row {
+    display: grid; grid-template-columns: 30px 1fr auto auto;
+    gap: 12px; align-items: center; padding: 8px 16px;
+    border-top: 0.5px solid var(--separator); cursor: pointer;
+    transition: background 0.1s;
+  }
+  .row:first-of-type { border-top: 0; }
+  .row:hover { background: rgba(0,0,0,0.02); }
+  .row-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: white; font-size: 14px; font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04) inset;
+  }
+  .row-icon svg { width: 15px; height: 15px; stroke-width: 2.2; }
+  .ic-blue { background: linear-gradient(135deg, #5AC8FA, #007AFF); }
+  .ic-orange { background: linear-gradient(135deg, #FFCC00, #FF9500); }
+  .ic-red { background: linear-gradient(135deg, #FF6B6B, #FF3B30); }
+  .ic-green { background: linear-gradient(135deg, #34C759, #00A859); }
+  .ic-purple { background: linear-gradient(135deg, #BF5AF2, #AF52DE); }
+  .ic-pink { background: linear-gradient(135deg, #FF6B9D, #FF2D55); }
+  .ic-indigo { background: linear-gradient(135deg, #6B7AE8, #5856D6); }
+  .ic-gray { background: linear-gradient(135deg, #98989D, #6E6E73); }
+  .ic-teal { background: linear-gradient(135deg, #5AC8FA, #00C7BE); }
+
+  .row-text { display: flex; flex-direction: column; min-width: 0; }
+  .row-title { font-size: 13.5px; font-weight: 500; white-space: nowrap;
+               overflow: hidden; text-overflow: ellipsis; }
+  .row-sub { font-size: 11.5px; color: var(--label-2); margin-top: 1px; }
+
+  /* 触发方式标签（核心新增） */
+  .triggers { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .trigger-tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 10.5px; padding: 1px 7px; border-radius: 999px;
+    font-weight: 500; line-height: 1.5;
+  }
+  .tg-passive { background: rgba(0,122,255,0.10); color: #0040DD; }
+  .tg-active  { background: rgba(52,199,89,0.12); color: #248A3D; }
+  .tg-glob    { background: rgba(255,149,0,0.12); color: #C77400; }
+  .tg-always  { background: rgba(175,82,222,0.12); color: #7E2EAB; }
+  .trigger-tag .dot {
+    width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+  }
+  .tg-passive .dot { background: var(--sys-blue); }
+  .tg-active .dot { background: var(--sys-green); }
+  .tg-glob .dot { background: var(--sys-orange); }
+  .tg-always .dot { background: var(--sys-purple); }
+
+  /* 显示触发关键字的小区域 */
+  .keywords {
+    font-family: var(--mono); font-size: 10.5px; color: var(--label-3);
+    margin-top: 4px; line-height: 1.5;
+  }
+  .keywords .kw { background: rgba(0,0,0,0.04); padding: 0 5px; border-radius: 3px;
+                   margin-right: 3px; display: inline-block; margin-bottom: 2px; }
+
+  .row-meta { color: var(--label-3); font-size: 12.5px; font-feature-settings: "tnum"; }
+  .row-chev { color: var(--label-4); font-size: 14px;
+              transition: transform 0.15s, color 0.15s; }
+  .row:hover .row-chev { color: var(--label-3); transform: translateX(2px); }
+
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+  .pill-green { background: rgba(52,199,89,0.15); color: #248A3D; }
+  .pill-orange { background: rgba(255,149,0,0.15); color: #C77400; }
+  .pill-blue { background: rgba(0,122,255,0.12); color: #0040DD; }
+  .pill-gray { background: rgba(120,120,128,0.16); color: var(--label-2); }
+
+  .btn { font-family: var(--sf); font-size: 13px; font-weight: 500;
+         padding: 5px 14px; border-radius: 7px; border: 0; cursor: pointer;
+         transition: all 0.1s; background: rgba(120,120,128,0.16); color: var(--label); }
+  .btn:hover { background: rgba(120,120,128,0.24); }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--sys-blue); color: white;
+                 box-shadow: 0 1px 2px rgba(0,122,255,0.25); }
+  .btn-primary:hover { background: #0067D9; }
+  .btn-orange { background: var(--sys-orange); color: white;
+                box-shadow: 0 1px 2px rgba(255,149,0,0.25); }
+  .btn-orange:hover { background: #E68500; }
+  .btn-sm { padding: 3px 10px; font-size: 12px; border-radius: 6px; }
+
+  .hero { background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.65));
+          backdrop-filter: blur(40px) saturate(180%);
+          border-radius: 16px; padding: 22px 26px; margin-bottom: 18px;
+          box-shadow: 0 0 0 0.5px var(--separator);
+          display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; }
+  .hero h2 { margin: 0 0 4px; font-size: 17px; font-weight: 600; letter-spacing: -0.012em; }
+  .hero p { margin: 0; color: var(--label-2); font-size: 13px; }
+  .hero .num-big { font-family: var(--sf-display);
+                   font-size: 36px; font-weight: 700; letter-spacing: -0.022em;
+                   background: linear-gradient(135deg, #007AFF, #5856D6);
+                   -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .mini-tiles { display: grid; grid-template-columns: repeat(4, 1fr);
+                gap: 10px; margin-bottom: 16px; }
+  .mini { background: var(--bg-card); backdrop-filter: blur(40px);
+          border-radius: 10px; padding: 11px 14px;
+          box-shadow: 0 0 0 0.5px var(--separator); }
+  .mini .lbl { font-size: 11px; color: var(--label-3); font-weight: 500;
+               text-transform: uppercase; letter-spacing: 0.03em; }
+  .mini .num { font-family: var(--sf-display);
+               font-size: 22px; font-weight: 600; letter-spacing: -0.018em;
+               color: var(--label); margin-top: 2px;
+               font-feature-settings: "tnum"; }
+  .mini .delta { font-size: 11px; color: var(--sys-green); margin-top: 1px;
+                 display: flex; align-items: center; gap: 4px; }
+  .mini .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sys-green); }
+
+  .toggle { width: 36px; height: 22px; border-radius: 11px;
+            background: var(--sys-green); position: relative;
+            transition: background 0.2s; }
+  .toggle::after { content: ''; position: absolute; top: 2px; left: 16px;
+                    width: 18px; height: 18px; border-radius: 50%; background: white;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.15); transition: left 0.2s; }
+  .toggle.off { background: rgba(120,120,128,0.32); }
+  .toggle.off::after { left: 2px; }
+
+  .input-row { display: flex; gap: 8px; align-items: center;
+               padding: 12px 16px; border-top: 0.5px solid var(--separator); }
+  .input-row input { flex: 1; padding: 6px 10px; height: 28px;
+                      background: rgba(255,255,255,0.5);
+                      border: 0.5px solid var(--separator); border-radius: 7px;
+                      font-family: var(--mono); font-size: 12.5px; color: var(--label);
+                      outline: none; }
+
+  pre { margin: 0; padding: 12px 14px; background: rgba(0,0,0,0.04);
+        border-radius: 8px; font-family: var(--mono); font-size: 12px; line-height: 1.6;
+        color: var(--label); user-select: all; border: 0.5px solid var(--separator); }
+  code { font-family: var(--mono); font-size: 12px;
+         background: rgba(0,0,0,0.04); padding: 1px 5px; border-radius: 4px; }
+
+  .log-line { display: grid; grid-template-columns: 70px 60px 1fr;
+              gap: 10px; padding: 6px 16px;
+              border-top: 0.5px solid var(--separator);
+              font-family: var(--mono); font-size: 11.5px; }
+  .log-line:first-child { border-top: 0; }
+  .log-line .t { color: var(--label-3); }
+  .log-line .lvl { font-weight: 600; }
+  .log-line .lvl.ok { color: var(--sys-green); }
+  .log-line .lvl.api { color: var(--sys-purple); }
+  .log-line .lvl.err { color: var(--sys-red); }
+
+  .editor { padding: 16px; font-family: var(--mono); font-size: 12px; line-height: 1.65;
+            white-space: pre-wrap; background: rgba(0,0,0,0.02); }
+
+  /* 触发方式图例（在 Skills 页顶部） */
+  .legend {
+    display: flex; gap: 16px; padding: 12px 16px; margin-bottom: 16px;
+    background: var(--bg-card-2);
+    border-radius: 10px; box-shadow: 0 0 0 0.5px var(--separator);
+    font-size: 12px; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; color: var(--label-2); }
+  .legend-item b { color: var(--label); font-weight: 500; }
+
+  .below-window { color: rgba(255,255,255,0.6); font-size: 13px;
+                   max-width: 1100px; line-height: 1.6; }
+  .below-window code { background: rgba(255,255,255,0.1); color: white;
+                        padding: 2px 7px; border-radius: 4px; border: 0; }
+</style>
+</head>
+<body>
+
+<div class="ruler">
+  <span><b>真实尺寸</b></span><span>1100 × 760</span>
+  <span>侧栏 240 · 主区 860</span>
+</div>
+
+<div class="window">
+  <div class="titlebar">
+    <div class="traffic-lights">
+      <div class="tl close"></div><div class="tl min"></div><div class="tl max"></div>
+    </div>
+    <div class="title"><span class="title-icon"></span>团队规范</div>
+    <div style="width: 56px;"></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="side-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input placeholder="搜索">
+    </div>
+
+    <div class="side-section">
+      <div class="side-section-h">工作区</div>
+      <div class="side-item active" data-page="install">
+        <div class="side-icon ic-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2 2 7l10 5 10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        安装
+      </div>
+      <div class="side-item" data-page="skills">
+        <div class="side-icon ic-purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+        </div>
+        Skill 管理 <span class="ct">4</span>
+      </div>
+      <div class="side-item" data-page="coverage">
+        <div class="side-icon ic-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        覆盖检查
+      </div>
+      <div class="side-item" data-page="projects">
+        <div class="side-icon ic-orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7v13a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7"/><path d="M3 7V5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2"/></svg>
+        </div>
+        项目同步 <span class="ct">2</span>
+      </div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-section-h">个性化</div>
+      <div class="side-item" data-page="custom">
+        <div class="side-icon ic-pink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        自定义规则 <span class="ct">3</span>
+      </div>
+      <div class="side-item" data-page="persona">
+        <div class="side-icon ic-indigo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        </div>
+        AI 人格
+      </div>
+      <div class="side-item" data-page="commands">
+        <div class="side-icon ic-red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 9h0M15 9h0M9 15h0M15 15h0"/><path d="M3 9a6 6 0 0 1 6-6h6a6 6 0 0 1 6 6v6a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6z"/></svg>
+        </div>
+        快捷命令 <span class="ct">5</span>
+      </div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-section-h">测试与分发</div>
+      <div class="side-item" data-page="test">
+        <div class="side-icon ic-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 3v18l14-9z"/></svg>
+        </div>
+        Skill 测试
+      </div>
+      <div class="side-item" data-page="distribute">
+        <div class="side-icon ic-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        </div>
+        打包分发
+      </div>
+      <div class="side-item" data-page="logs">
+        <div class="side-icon ic-gray">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        </div>
+        日志
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ===== 安装 ===== -->
+    <div class="page active" data-page="install">
+      <h1 class="h1">安装</h1>
+      <p class="lead">管理团队规范的 Skill、references 与规则文件，覆盖 Claude Code、Cursor 和项目级目录。</p>
+
+      <div class="seg">
+        <div class="seg-item active" data-sub="status">状态</div>
+        <div class="seg-item" data-sub="update">更新</div>
+        <div class="seg-item" data-sub="addons">扩展</div>
+        <div class="seg-item" data-sub="proj">项目同步</div>
+        <div class="seg-item" data-sub="distrib">打包分发</div>
+        <div class="seg-item" data-sub="trouble">帮助</div>
+      </div>
+
+      <div class="subpage active" data-sub="status">
+        <div class="hero">
+          <div>
+            <h2>所有规范都已同步到最新</h2>
+            <p>4 个 Skill · 17 个 references · 13 条规则 · 5 条命令 · 2 分钟前已检查</p>
+          </div>
+          <div class="num-big">100%</div>
+        </div>
+
+        <div class="mini-tiles">
+          <div class="mini"><div class="lbl">规范文件</div><div class="num">17</div><div class="delta"><span class="dot"></span>已最新</div></div>
+          <div class="mini"><div class="lbl">Skill</div><div class="num">4</div><div class="delta"><span class="dot"></span>v1.7.25</div></div>
+          <div class="mini"><div class="lbl">Cursor 规则</div><div class="num">13</div><div class="delta"><span class="dot"></span>+1 自定义</div></div>
+          <div class="mini"><div class="lbl">快捷命令</div><div class="num">5</div><div class="delta"><span class="dot"></span>已装</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">已装 Skill <span class="ct">4 个 · 都已激活</span></div>
+          <div class="row">
+            <div class="row-icon ic-blue">go</div>
+            <div class="row-text">
+              <div class="row-title">go-team-standards</div>
+              <div class="row-sub">14 条铁律 · 17 个 references</div>
+              <div class="triggers">
+                <span class="trigger-tag tg-passive"><span class="dot"></span>被动 · 关键字</span>
+                <span class="trigger-tag tg-glob"><span class="dot"></span>文件 · *.go *.md *.sql</span>
+              </div>
+            </div>
+            <span class="pill pill-green">已同步</span>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-orange">🐱</div>
+            <div class="row-text">
+              <div class="row-title">orangecat</div>
+              <div class="row-sub">提测文档生成 · QA + 开发版</div>
+              <div class="triggers">
+                <span class="trigger-tag tg-passive"><span class="dot"></span>被动 · 关键字</span>
+                <span class="trigger-tag tg-active"><span class="dot"></span>主动 · /tixuebj</span>
+              </div>
+            </div>
+            <span class="pill pill-green">已同步</span>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-purple">🧬</div>
+            <div class="row-text">
+              <div class="row-title">dev-dna</div>
+              <div class="row-sub">个人开发偏好 · 跨电脑迁移</div>
+              <div class="triggers">
+                <span class="trigger-tag tg-always"><span class="dot"></span>始终注入</span>
+              </div>
+            </div>
+            <span class="pill pill-green">已同步</span>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-indigo">🔍</div>
+            <div class="row-text">
+              <div class="row-title">code-review</div>
+              <div class="row-sub">写完代码自动评审 · 14 铁律 + 命名规范</div>
+              <div class="triggers">
+                <span class="trigger-tag tg-passive"><span class="dot"></span>被动 · 自动评审</span>
+                <span class="trigger-tag tg-active"><span class="dot"></span>主动 · /review</span>
+              </div>
+            </div>
+            <span class="pill pill-orange">待安装</span>
+            <span class="row-chev">›</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">最近活动</div>
+          <div class="log-line"><span class="t">10:58</span><span class="lvl ok">安装</span><span>go-team-standards · 23 个文件 · 142 ms</span></div>
+          <div class="log-line"><span class="t">10:52</span><span class="lvl ok">导出</span><span>orangecat.zip · 11.2 KB</span></div>
+          <div class="log-line"><span class="t">08:58</span><span class="lvl ok">扫描</span><span>发现 2 个项目 · 78 ms</span></div>
+        </div>
+      </div>
+
+      <div class="subpage" data-sub="update" style="display:none;">
+        <div class="hero">
+          <div>
+            <h2>一键更新所有规范</h2>
+            <p>重装全部 4 个 Skill + Cursor 规则到最新版本。自定义规则会被保留。</p>
+          </div>
+          <button class="btn btn-orange">立即更新</button>
+        </div>
+
+        <div class="card">
+          <div class="card-h">分 Skill 更新</div>
+          <div class="row">
+            <div class="row-icon ic-blue">go</div>
+            <div class="row-text"><div class="row-title">go-team-standards</div><div class="row-sub">v1.7.24 → v1.7.25 · 1 个文件变更</div></div>
+            <span class="pill pill-green">最新</span>
+            <button class="btn btn-sm">重装</button>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-orange">🐱</div>
+            <div class="row-text"><div class="row-title">orangecat</div><div class="row-sub">v1.7.24 → v1.7.25 · 无变更</div></div>
+            <span class="pill pill-green">最新</span>
+            <button class="btn btn-sm">重装</button>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-purple">🧬</div>
+            <div class="row-text"><div class="row-title">dev-dna</div><div class="row-sub">v1.7.24 → v1.7.25 · 个人档案保留</div></div>
+            <span class="pill pill-green">最新</span>
+            <button class="btn btn-sm">重装</button>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-indigo">🔍</div>
+            <div class="row-text"><div class="row-title">code-review</div><div class="row-sub">未安装 · 2 个文件待添加</div></div>
+            <span class="pill pill-orange">缺失</span>
+            <button class="btn btn-primary btn-sm">安装</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="subpage" data-sub="addons" style="display:none;">
+        <div class="card">
+          <div class="card-h">快捷命令 <span class="ct">5 已装 · Claude / Cursor 中输入 / 调用</span></div>
+          <div class="row">
+            <div class="row-icon ic-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 9h0"/></svg></div>
+            <div class="row-text">
+              <div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/tech-design</div>
+              <div class="row-sub">按 7 段范例生成技术方案文档</div>
+            </div>
+            <span class="pill pill-green">已激活</span>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 9h0"/></svg></div>
+            <div class="row-text">
+              <div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/design-table</div>
+              <div class="row-sub">按命名规范生成完整 CREATE TABLE</div>
+            </div>
+            <span class="pill pill-green">已激活</span>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 9h0"/></svg></div>
+            <div class="row-text">
+              <div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/api-doc</div>
+              <div class="row-sub">按统一格式生成接口文档</div>
+            </div>
+            <span class="pill pill-green">已激活</span>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 9h0"/></svg></div>
+            <div class="row-text">
+              <div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/review</div>
+              <div class="row-sub">按 14 条铁律审查 git diff</div>
+            </div>
+            <span class="pill pill-green">已激活</span>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 9h0"/></svg></div>
+            <div class="row-text">
+              <div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/tixuebj</div>
+              <div class="row-sub">主动触发 OrangeCat 提测文档生成</div>
+            </div>
+            <span class="pill pill-green">已激活</span>
+            <span class="row-chev">›</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">自定义规则 <span class="ct">3 条已激活</span></div>
+          <div class="row">
+            <div class="row-icon ic-pink">SM</div>
+            <div class="row-text"><div class="row-title">team-auth-flow</div><div class="row-sub">JWT 必须携带 X-Trace-ID</div></div>
+            <div class="toggle"></div>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-pink">SM</div>
+            <div class="row-text"><div class="row-title">cron-naming</div><div class="row-sub">定时任务必须以 cron_ 开头</div></div>
+            <div class="toggle"></div>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-pink">SM</div>
+            <div class="row-text"><div class="row-title">redis-key-ttl</div><div class="row-sub">Redis key 必须声明 TTL 或注明"永久"</div></div>
+            <div class="toggle off"></div>
+            <span class="row-chev">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="subpage" data-sub="proj" style="display:none;">
+        <div class="card">
+          <div class="card-h">扫描根目录</div>
+          <div style="padding: 12px 16px;">
+            <p style="margin: 0; font-size: 13px; color: var(--label-2);">深度扫 5 层，跳过 <code>node_modules</code> / <code>vendor</code> / <code>dist</code>。</p>
+          </div>
+          <div class="input-row">
+            <input value="~/Code">
+            <button class="btn btn-primary btn-sm">扫描</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h">检测到的项目 <span class="ct">2 个</span></div>
+          <div class="row">
+            <div class="row-icon ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7v13a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7"/></svg></div>
+            <div class="row-text"><div class="row-title" style="font-family: var(--mono); font-size: 12.5px;">~/Code/golang/first-test</div><div class="row-sub">.cursor/rules · 空（无 .mdc）</div></div>
+            <span class="pill pill-orange">空</span>
+            <span class="row-chev">›</span>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7v13a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7"/></svg></div>
+            <div class="row-text"><div class="row-title" style="font-family: var(--mono); font-size: 12.5px;">~/Code/重构文件</div><div class="row-sub">.cursor/rules · 1 个用户自加 .mdc（保留）</div></div>
+            <span class="pill pill-orange">需同步</span>
+            <span class="row-chev">›</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top: 8px;">同步选中的 2 个项目</button>
+      </div>
+
+      <div class="subpage" data-sub="distrib" style="display:none;">
+        <div class="card">
+          <div class="card-h">给团队的安装包</div>
+          <div class="row">
+            <div class="row-icon ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+            <div class="row-text"><div class="row-title">DMG · 推荐</div><div class="row-sub">macOS 原生镜像 · 约 15 MB · 双击直装 · 签名保留</div></div>
+            <span></span>
+            <button class="btn btn-primary btn-sm">生成</button>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8M3 8v8M12 4v16M3.3 7L12 12l8.7-5"/></svg></div>
+            <div class="row-text"><div class="row-title">ZIP 压缩包</div><div class="row-sub">约 14 MB · 适合较旧 macOS / 受限环境</div></div>
+            <span></span>
+            <button class="btn btn-sm">生成</button>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+            <div class="row-text"><div class="row-title">Shell 安装脚本</div><div class="row-sub">单个 .sh 文件 · 接收方无需此 App</div></div>
+            <span></span>
+            <button class="btn btn-sm">生成</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h">给 Claude Desktop 的单 Skill 包</div>
+          <div class="row">
+            <div class="row-icon ic-blue">go</div>
+            <div class="row-text"><div class="row-title">go-team-standards.zip</div><div class="row-sub">含 INSTALL.md 安装说明</div></div>
+            <span></span>
+            <button class="btn btn-sm">导出</button>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-orange">🐱</div>
+            <div class="row-text"><div class="row-title">orangecat.zip</div><div class="row-sub">含 QA + 开发版模板</div></div>
+            <span></span>
+            <button class="btn btn-sm">导出</button>
+          </div>
+          <div class="row">
+            <div class="row-icon ic-purple">🧬</div>
+            <div class="row-text"><div class="row-title">dev-dna.zip</div><div class="row-sub">含个人偏好档案</div></div>
+            <span></span>
+            <button class="btn btn-sm">导出</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="subpage" data-sub="trouble" style="display:none;">
+        <div class="card">
+          <div class="card-h">首次打开提示"已损坏"</div>
+          <div style="padding: 4px 16px 14px;">
+            <p style="margin: 0 0 10px; font-size: 13px; color: var(--label-2); line-height: 1.55;">
+              macOS Gatekeeper 给未签名 App 加了 quarantine 标记。Ad-hoc 签名解决不了，需手动清除：
+            </p>
+            <pre>xattr -cr /Applications/Team\ Standards.app</pre>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h">Skill 装了不触发</div>
+          <div style="padding: 4px 16px 14px;">
+            <p style="margin: 0; font-size: 13px; color: var(--label-2); line-height: 1.55;">
+              <strong>Cmd+Q 彻底退出 Claude Code / Cursor</strong>，不是关窗口。Skill 只在启动时加载一次。退出后重开，再问含触发关键字的话题（如"PostgreSQL"、"提测"、"review"）。
+            </p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h">回复末尾没有 🌟 / 🐱 / 🧬 / 🔍 标记</div>
+          <div style="padding: 4px 16px 14px;">
+            <p style="margin: 0; font-size: 13px; color: var(--label-2); line-height: 1.55;">
+              说明 Skill 没被激活。去 Skill 测试 页验证你的本地大模型是否能稳定输出标记。本地小模型（量化 7B）可能不稳。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Skill 管理（重点强化触发方式展示） ===== -->
+    <div class="page" data-page="skills" style="display: none;">
+      <h1 class="h1">Skill 管理</h1>
+      <p class="lead">所有已装 Skill 及其触发方式。同一 Skill 可能有多种触发途径。</p>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="trigger-tag tg-passive"><span class="dot"></span>被动</span>
+          <span><b>关键字</b>命中时自动激活</span>
+        </div>
+        <div class="legend-item">
+          <span class="trigger-tag tg-active"><span class="dot"></span>主动</span>
+          <span>用户敲 <b>/命令</b> 调用</span>
+        </div>
+        <div class="legend-item">
+          <span class="trigger-tag tg-glob"><span class="dot"></span>文件</span>
+          <span>编辑命中 <b>文件类型</b> 时</span>
+        </div>
+        <div class="legend-item">
+          <span class="trigger-tag tg-always"><span class="dot"></span>始终</span>
+          <span>每次对话都<b>注入</b></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">go-team-standards</div>
+        <div class="row" style="grid-template-columns: 30px 1fr auto;">
+          <div class="row-icon ic-blue">go</div>
+          <div class="row-text">
+            <div class="row-title">Go 团队规范 · 14 条铁律 + 17 个 references</div>
+            <div class="row-sub">触发后回复末尾打 🌟 标记 · v1.7.25</div>
+            <div class="triggers">
+              <span class="trigger-tag tg-passive"><span class="dot"></span>被动 · 关键字</span>
+              <span class="trigger-tag tg-glob"><span class="dot"></span>文件 · *.go *.sql *.proto</span>
+              <span class="trigger-tag tg-glob"><span class="dot"></span>文件 · *.md（写文档时）</span>
+            </div>
+            <div class="keywords">
+              <span class="kw">Go / golang</span>
+              <span class="kw">Kratos / Wire</span>
+              <span class="kw">PostgreSQL / MySQL / Redis / Kafka</span>
+              <span class="kw">技术方案 / 接口文档 / 数据库设计</span>
+              <span class="kw">code review / MR / 部署</span>
+              <span class="kw">字段命名 / Kafka topic / Redis key</span>
+            </div>
+          </div>
+          <span class="row-chev">›</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">orangecat</div>
+        <div class="row" style="grid-template-columns: 30px 1fr auto;">
+          <div class="row-icon ic-orange">🐱</div>
+          <div class="row-text">
+            <div class="row-title">提测文档生成器 · 给 QA + 开发各一份</div>
+            <div class="row-sub">触发后回复末尾打 🐱 标记 · 生成两个 .md 文件</div>
+            <div class="triggers">
+              <span class="trigger-tag tg-passive"><span class="dot"></span>被动 · 关键字</span>
+              <span class="trigger-tag tg-active"><span class="dot"></span>主动 · /tixuebj</span>
+            </div>
+            <div class="keywords">
+              <span class="kw">提测</span>
+              <span class="kw">QA 交付 / 提交测试</span>
+              <span class="kw">生成提测报告</span>
+              <span class="kw">OrangeCat</span>
+            </div>
+          </div>
+          <span class="row-chev">›</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">dev-dna</div>
+        <div class="row" style="grid-template-columns: 30px 1fr auto;">
+          <div class="row-icon ic-purple">🧬</div>
+          <div class="row-text">
+            <div class="row-title">个人开发档案 · 跨电脑跨账号无缝迁移</div>
+            <div class="row-sub">触发后回复末尾打 🧬 标记 · 含反蒸馏声明</div>
+            <div class="triggers">
+              <span class="trigger-tag tg-always"><span class="dot"></span>始终注入</span>
+              <span class="trigger-tag tg-passive"><span class="dot"></span>被动 · 关键字</span>
+            </div>
+            <div class="keywords">
+              <span class="kw">按我习惯写</span>
+              <span class="kw">我喜欢 / 我倾向</span>
+              <span class="kw">用我常用的套路</span>
+              <span class="kw">新项目起步</span>
+            </div>
+          </div>
+          <span class="row-chev">›</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">code-review</div>
+        <div class="row" style="grid-template-columns: 30px 1fr auto;">
+          <div class="row-icon ic-indigo">🔍</div>
+          <div class="row-text">
+            <div class="row-title">代码评审 · 自动按团队规范评审</div>
+            <div class="row-sub">触发后回复末尾打 🔍 标记 · AI 写完代码自动评审</div>
+            <div class="triggers">
+              <span class="trigger-tag tg-passive"><span class="dot"></span>被动 · 自动</span>
+              <span class="trigger-tag tg-active"><span class="dot"></span>主动 · /review</span>
+            </div>
+            <div class="keywords">
+              <span class="kw">写完代码（AI 自检）</span>
+              <span class="kw">用户粘代码 + "看下"</span>
+              <span class="kw">review / 审一下 / 检查</span>
+              <span class="kw">PR / MR / 评审</span>
+            </div>
+          </div>
+          <span class="row-chev">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 其他子页（精简） -->
+    <div class="page" data-page="coverage" style="display: none;">
+      <h1 class="h1">覆盖检查</h1>
+      <p class="lead">扫描已装文件 vs 内置版本，按 hash 逐个对比。</p>
+      <div class="mini-tiles">
+        <div class="mini"><div class="lbl">总计</div><div class="num">47</div></div>
+        <div class="mini"><div class="lbl" style="color: var(--sys-green);">已最新</div><div class="num" style="color: var(--sys-green);">45</div></div>
+        <div class="mini"><div class="lbl" style="color: var(--sys-orange);">过时</div><div class="num" style="color: var(--sys-orange);">0</div></div>
+        <div class="mini"><div class="lbl" style="color: var(--sys-red);">缺失</div><div class="num" style="color: var(--sys-red);">2</div></div>
+      </div>
+      <div class="card">
+        <div class="card-h">分组明细</div>
+        <div class="row">
+          <div class="row-icon ic-blue">go</div>
+          <div class="row-text"><div class="row-title">Claude · go-team-standards</div><div class="row-sub">23 / 23 文件匹配</div></div>
+          <span class="pill pill-green">100%</span>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-purple">cs</div>
+          <div class="row-text"><div class="row-title">Cursor · 规则</div><div class="row-sub">13 / 13 .mdc 匹配</div></div>
+          <span class="pill pill-green">100%</span>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-orange">🐱</div>
+          <div class="row-text"><div class="row-title">Claude · orangecat</div><div class="row-sub">3 / 3 文件匹配</div></div>
+          <span class="pill pill-green">100%</span>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-indigo">🔍</div>
+          <div class="row-text"><div class="row-title">Claude · code-review</div><div class="row-sub">0 / 2 · Skill 未安装</div></div>
+          <span class="pill pill-orange">缺失</span>
+          <span class="row-chev">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" data-page="projects" style="display: none;">
+      <h1 class="h1">项目同步</h1>
+      <p class="lead">全局规范在 <code>~/.claude/skills/</code>。项目级 <code>&lt;项目&gt;/.cursor/rules/</code> 需单独同步。</p>
+      <div class="card">
+        <div class="card-h">扫描根目录</div>
+        <div class="input-row">
+          <input value="~/Code">
+          <button class="btn btn-primary btn-sm">扫描</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" data-page="custom" style="display: none;">
+      <h1 class="h1">自定义规则</h1>
+      <p class="lead">团队特定规则，存为 <code>custom-*.md</code>，更新时保留。</p>
+      <div class="card">
+        <div class="card-h">已激活规则 <span class="ct">3 条</span></div>
+        <div class="row">
+          <div class="row-icon ic-pink">SM</div>
+          <div class="row-text"><div class="row-title">team-auth-flow</div><div class="row-sub">JWT 必须携带 X-Trace-ID</div></div>
+          <div class="toggle"></div>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-pink">SM</div>
+          <div class="row-text"><div class="row-title">cron-naming</div><div class="row-sub">定时任务必须以 cron_ 开头</div></div>
+          <div class="toggle"></div>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-pink">SM</div>
+          <div class="row-text"><div class="row-title">redis-key-ttl</div><div class="row-sub">Redis key 必须声明 TTL</div></div>
+          <div class="toggle off"></div>
+          <span class="row-chev">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" data-page="persona" style="display: none;">
+      <h1 class="h1">AI 人格</h1>
+      <p class="lead">注入到每次 Claude 对话的全局工作态度准则。</p>
+      <div class="card">
+        <div class="card-h">当前激活的人格</div>
+        <div class="editor"># 工作态度准则
+
+## 1. 严谨求实
+- 不臆测代码行为；引用前确认存在
+- 不确定就说"不确定"，禁编造
+
+## 2. 不敷衍
+- 杜绝"看起来应该可以"
+- 改完主动想：边界 / 错误 / 并发 / 性能 / 回滚
+
+## 3. 勤勉
+- 含糊先澄清，不凭空补需求
+- 找根因，不只消症状
+
+## 4. 交付诚实
+- 跳过的步骤明说
+- 改完简述：改了啥 / 为啥 / 隐患
+</div>
+      </div>
+    </div>
+
+    <div class="page" data-page="commands" style="display: none;">
+      <h1 class="h1">快捷命令</h1>
+      <p class="lead">用户主动调用的模板。在 Claude / Cursor 中输入 <code>/&lt;命令名&gt;</code>。</p>
+      <div class="card">
+        <div class="card-h">已装 5 条</div>
+        <div class="row">
+          <div class="row-icon ic-pink"><span style="font-size:12px;">/</span></div>
+          <div class="row-text"><div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/tech-design</div><div class="row-sub">生成技术方案文档</div></div>
+          <span class="pill pill-green">已激活</span>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-pink"><span style="font-size:12px;">/</span></div>
+          <div class="row-text"><div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/design-table</div><div class="row-sub">按命名规范生成 CREATE TABLE</div></div>
+          <span class="pill pill-green">已激活</span>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-pink"><span style="font-size:12px;">/</span></div>
+          <div class="row-text"><div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/api-doc</div><div class="row-sub">生成接口文档</div></div>
+          <span class="pill pill-green">已激活</span>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-pink"><span style="font-size:12px;">/</span></div>
+          <div class="row-text"><div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/review</div><div class="row-sub">按 14 条铁律审查代码</div></div>
+          <span class="pill pill-green">已激活</span>
+          <span class="row-chev">›</span>
+        </div>
+        <div class="row">
+          <div class="row-icon ic-pink"><span style="font-size:12px;">/</span></div>
+          <div class="row-text"><div class="row-title" style="font-family: var(--mono); color: var(--sys-blue);">/tixuebj</div><div class="row-sub">触发 OrangeCat 生成提测文档</div></div>
+          <span class="pill pill-green">已激活</span>
+          <span class="row-chev">›</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" data-page="test" style="display: none;">
+      <h1 class="h1">Skill 测试</h1>
+      <p class="lead">用 20 条违规 prompt 测试本地 LLM 是否能正确触发 + 识别。</p>
+      <div class="card">
+        <div class="card-h">API 配置</div>
+        <div class="row" style="grid-template-columns: 1fr auto;">
+          <div class="row-text"><div class="row-title">服务商</div><div class="row-sub">Clawnova（公司本地大模型）</div></div>
+          <span class="row-meta">qwen3.5-27b-local</span>
+        </div>
+        <div class="row" style="grid-template-columns: 1fr auto;">
+          <div class="row-text"><div class="row-title">API 地址</div><div class="row-sub" style="font-family: var(--mono);">https://clawnova.ai/api/v1</div></div>
+          <button class="btn btn-sm">编辑</button>
+        </div>
+        <div class="row" style="grid-template-columns: 1fr auto;">
+          <div class="row-text"><div class="row-title">API Key</div><div class="row-sub" style="font-family: var(--mono);">kgb_d0ef***ae244f</div></div>
+          <button class="btn btn-sm">测试连接</button>
+        </div>
+      </div>
+      <button class="btn btn-orange" style="margin-top: 8px;">运行全部 20 条测试</button>
+    </div>
+
+    <div class="page" data-page="distribute" style="display: none;">
+      <h1 class="h1">打包分发</h1>
+      <p class="lead">生成给团队的安装包，含自定义规则和 INSTALL.md 安装说明。</p>
+      <div class="card">
+        <div class="card-h">支持的格式</div>
+        <div class="row">
+          <div class="row-icon ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 16V8"/></svg></div>
+          <div class="row-text"><div class="row-title">DMG · 推荐</div><div class="row-sub">macOS 原生 · 15 MB</div></div>
+          <span></span>
+          <button class="btn btn-primary btn-sm">生成</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" data-page="logs" style="display: none;">
+      <h1 class="h1">日志</h1>
+      <p class="lead">最近的操作记录与耗时。</p>
+      <div class="card">
+        <div class="card-h">过去 24 小时</div>
+        <div class="log-line"><span class="t">10:58:24</span><span class="lvl ok">安装</span><span>go-team-standards · 23 个文件 · 142 ms</span></div>
+        <div class="log-line"><span class="t">10:58:24</span><span class="lvl ok">安装</span><span>cursor/rules · 13 个文件 · 38 ms</span></div>
+        <div class="log-line"><span class="t">10:58:25</span><span class="lvl ok">安装</span><span>orangecat · 3 个文件 · 12 ms</span></div>
+        <div class="log-line"><span class="t">10:58:25</span><span class="lvl ok">安装</span><span>dev-dna · 3 个文件 · 11 ms</span></div>
+        <div class="log-line"><span class="t">10:52:01</span><span class="lvl api">API</span><span>clawnova.generate · in=2221 out=600 · 9.5 s</span></div>
+        <div class="log-line"><span class="t">10:51:50</span><span class="lvl api">API</span><span>clawnova.generate · in=23 out=45 · 0.5 s（连接测试）</span></div>
+        <div class="log-line"><span class="t">10:48:12</span><span class="lvl ok">扫描</span><span>2 个项目 · 78 ms</span></div>
+        <div class="log-line"><span class="t">10:42:08</span><span class="lvl ok">保存</span><span>orangecat.zip · 11.2 KB</span></div>
+        <div class="log-line"><span class="t">10:30:00</span><span class="lvl err">API</span><span>clawnova 失败 · 上下文窗口超限</span></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="below-window">
+  <strong>已全中文化 + 强化触发方式展示</strong>。
+  侧栏「Skill 管理」页里每个 Skill 都标了触发方式（被动/主动/文件/始终），并展开关键字列表。
+  点侧栏切页 / 点「安装」顶部分段切内部 Tab。
+</div>
+
+<script>
+  document.querySelectorAll('.side-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const t = el.dataset.page;
+      document.querySelectorAll('.side-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.page').forEach(x => {
+        x.classList.remove('active');
+        x.style.display = 'none';
+      });
+      const p = document.querySelector(`.page[data-page="${t}"]`);
+      p.classList.add('active');
+      p.style.display = 'block';
+      document.querySelector('.main').scrollTop = 0;
+    });
+  });
+  document.querySelectorAll('.seg-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const t = el.dataset.sub;
+      document.querySelectorAll('.seg-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.subpage').forEach(x => {
+        x.classList.remove('active');
+        x.style.display = 'none';
+      });
+      const p = document.querySelector(`.subpage[data-sub="${t}"]`);
+      p.classList.add('active');
+      p.style.display = 'block';
+    });
+  });
+  document.querySelectorAll('.toggle').forEach(t => {
+    t.addEventListener('click', e => {
+      e.stopPropagation();
+      t.classList.toggle('off');
+    });
+  });
+</script>
+</body>
+</html>

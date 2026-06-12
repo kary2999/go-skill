@@ -1,0 +1,39 @@
+---
+description: Error code system — registry-driven, xerror + errno constants only
+globs: **/*.go
+alwaysApply: false
+---
+
+# 错误码管理
+
+## 核心原则
+错误码是**受控元数据资产**：IDP 注册 → Git `error-codes` 仓库 → codegen → Go/TS/Dart SDK → 业务代码引用常量。
+
+## 写法
+```go
+// ❌ 禁止
+return errors.New("order not found")
+return xerror.New(404, "order not found")
+return xerror.New(100404)             // 数字字面量禁止
+
+// ✅ 标准
+import "github.com/company/pkg/errno"
+
+return xerror.New(errno.OrderNotFound).WithDetail("order id: 123")
+```
+
+## CI Linter 检查逻辑
+1. 扫描 `return` 语句中的 `xerror.New(...)`。
+2. 第一个参数若为数字字面量或非 `errno` 包导出常量 → 报错。
+3. 必须引用 `errno` 包下的导出常量。
+
+## 错误码规范
+- 按模块划分：10xx 用户、20xx 交易……
+- Enum Name `PascalCase`（`OrderNotFound`）。
+- 已发布错误码禁止删除，只能 `Deprecated`。
+- 紧急临时错误码需架构师批准 CI 跳过标签。
+
+## 可观测性
+- 日志自动注入 `error_code` 标签（Loki 过滤）。
+- Trace Attribute 注入错误码（Tempo 定位）。
+- VictoriaMetrics 统计错误码分布，识别业务策略问题。

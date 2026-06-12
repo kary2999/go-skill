@@ -1,0 +1,22 @@
+# 含 API Key 的本地默认值文件（每个开发者本地填，不入 git）
+defaults_local.go
+
+# macOS 元数据
+.DS_Store
+._*
+
+# 构建产物
+team-standards-installer
+Team Standards.app/
+TeamStandards-v*.dmg
+TeamStandards-v*.zip
+install-skills-v*.sh
+
+# IDE
+.idea/
+.vscode/
+
+# 临时
+/tmp/
+*.swp
+*.bak

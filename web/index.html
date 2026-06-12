@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#5856d6">
+<meta name="description" content="Go 微服务团队规范 · 工程红线 · AI 协作提示词">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="GoSkill">
+<title>GoSkill</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- App 更新 Banner（顶部，启动检测到新版时显示）-->
+<div class="update-banner" id="updateBanner">
+  <span class="icon">🆕</span>
+  <span class="text" id="updateBannerText">Team Standards 有新版本可用</span>
+  <button id="updateBannerView">查看更新</button>
+  <button class="ghost" id="updateBannerLater">稍后</button>
+  <button class="ghost" id="updateBannerSkip">跳过此版本</button>
+</div>
+
+<!-- App 更新 Modal -->
+<div class="modal-overlay" id="updateModal">
+  <div class="modal" style="max-width: 720px;">
+    <div class="modal-head">
+      <div>
+        <h2 id="updateModalTitle">Team Standards · 新版本可用</h2>
+        <div class="modal-sub" id="updateModalSub"></div>
+      </div>
+      <button class="modal-close" id="updateModalClose">✕</button>
+    </div>
+    <div class="modal-body" style="flex-direction: column; gap: 14px;">
+      <pre class="markdown-box" id="updateModalNotes" style="max-height: 320px; flex: none;">加载中…</pre>
+
+      <div style="background: var(--bg-card-2); border: 0.5px solid var(--separator); border-radius: 8px; padding: 12px 14px; font-size: 12.5px; line-height: 1.6;">
+        <strong>📋 装完别忘记</strong>：DMG 拖到 Applications 后必须跑这条解 macOS Gatekeeper 隔离：
+        <pre style="margin: 8px 0 0; padding: 8px 10px; background: rgba(0,0,0,0.05); border-radius: 6px; font-size: 12px; user-select: all;">xattr -cr /Applications/Team\ Standards.app</pre>
+      </div>
+
+      <div class="dist-buttons">
+        <button id="updateAutoInstallBtn" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, var(--sys-blue), var(--sys-indigo));">🚀 一键升级（自动下载 + 安装 + 重启）</button>
+        <button id="updateDownloadBtn" class="btn btn-ghost">💽 下载 DMG 手工装</button>
+        <button id="updateCopyXattrBtn" class="btn btn-ghost">📋 复制 xattr 命令</button>
+        <button id="updateModalSkipBtn" class="btn btn-ghost danger">跳过此版本</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 升级进度 Modal -->
+<div class="modal-overlay" id="upgradeProgressModal">
+  <div class="modal" style="max-width: 540px;">
+    <div class="modal-head">
+      <div>
+        <h2>🚀 一键升级</h2>
+        <div class="modal-sub" id="upgradeProgressPhase">准备中…</div>
+      </div>
+    </div>
+    <div class="modal-body" style="flex-direction: column; gap: 14px;">
+      <div id="upgradeProgressMsg" style="font-size: 13px; color: var(--label-2);">…</div>
+
+      <div style="background: var(--bg-card-2); border: 0.5px solid var(--separator); border-radius: 8px; padding: 10px; height: 14px; position: relative; overflow: hidden;">
+        <div id="upgradeProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--sys-blue), var(--sys-indigo)); border-radius: 8px; transition: width 0.2s;"></div>
+      </div>
+      <div id="upgradeProgressDetail" style="font-size: 12px; color: var(--label-3); font-family: var(--mono);">0 KB / 0 KB · 0%</div>
+
+      <div id="upgradeProgressNote" style="display:none; background: rgba(255,149,0,0.10); border: 0.5px solid rgba(255,149,0,0.30); border-radius: 8px; padding: 10px; font-size: 12.5px; line-height: 1.5;"></div>
+
+      <div id="upgradeProgressActions" class="dist-buttons" style="display:none;">
+        <button id="upgradeViewLogBtn" class="btn btn-ghost btn-sm">📋 看升级日志</button>
+        <button id="upgradeCloseBtn" class="btn btn-ghost btn-sm">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🦕</div>
+    <div>
+      <div class="logo-title">Team Standards</div>
+      <div class="logo-sub" id="version">v…</div>
+    </div>
+  </div>
+
+  <nav class="sidenav">
+    <button class="navitem active" data-tab="skills">
+      <span class="navicon">📚</span><span>规范模块</span>
+      <span class="count" id="skillsCount">–</span>
+    </button>
+    <button class="navitem" data-tab="custom">
+      <span class="navicon sm-badge">SM</span><span>Skill 管理</span>
+      <span class="count" id="customCount">–</span>
+    </button>
+    <!-- 新建项目 Tab 已隐藏 —— 团队内部走 IDP 平台，不再从 App 创建项目。
+         保留 tab-scaffold panel 和后端 /api/scaffold/* 路由以便未来恢复。 -->
+    <button class="navitem" data-tab="scaffold" style="display:none;">
+      <span class="navicon">🏗️</span><span>新建项目</span>
+    </button>
+    <button class="navitem" data-tab="persona">
+      <span class="navicon">🎭</span><span>AI 人格</span>
+      <span class="count" id="personaCount">–</span>
+    </button>
+    <button class="navitem" data-tab="installed">
+      <span class="navicon">📋</span><span>已装清单</span>
+      <span class="count" id="installedCount">–</span>
+    </button>
+    <button class="navitem" data-tab="superpowers">
+      <span class="navicon">⚡</span><span>Superpowers</span>
+      <span class="count" id="superpowersCount">–</span>
+    </button>
+    <button class="navitem" data-tab="eval">
+      <span class="navicon">🧪</span><span>测试 Skill</span>
+      <span class="count" id="evalCount">–</span>
+    </button>
+    <button class="navitem" data-tab="hooks-guard">
+      <span class="navicon">🔒</span><span>强制约束</span>
+      <span class="nav-badge" id="hooksEnabledCount" style="display:none;"></span>
+    </button>
+    <button class="navitem" data-tab="prompts">
+      <span class="navicon">💬</span><span>提示词</span>
+    </button>
+    <button class="navitem" data-tab="logs">
+      <span class="navicon">🪵</span><span>日志控制台</span>
+      <span class="count" id="logsCount">–</span>
+    </button>
+    <button class="navitem" data-tab="install">
+      <span class="navicon">⚡</span><span>安装</span>
+    </button>
+  </nav>
+
+  <div class="sidefoot">
+    Go 微服务团队规范<br>
+    Kratos · Wire · Buf · common-lib
+  </div>
+</aside>
+
+<main class="content">
+
+  <!-- ========== 规范模块 ========== -->
+  <section class="tab-panel active" id="tab-skills">
+    <div class="page-head">
+      <h1>规范模块</h1>
+      <p>Claude Skill 按 description 自动触发；Cursor 按 glob 自动加载。点击卡片查看完整规则原文。</p>
+    </div>
+    <div class="cards" id="skillsList"></div>
+  </section>
+
+  <!-- ========== Skill 管理（SM）========== -->
+  <section class="tab-panel" id="tab-custom">
+    <div class="page-head sm-head">
+      <div class="sm-logo">SM</div>
+      <div>
+        <h1>Skill Management</h1>
+        <p>添加团队规范之外的个人 / 小组规则。保存后立即同步到 <code>~/.cursor/rules/custom-*.mdc</code> 和 <code>~/.claude/skills/go-team-standards/references/</code>，并会一起打进下载的 zip 分发包。</p>
+      </div>
+    </div>
+
+    <div class="custom-layout">
+      <div class="custom-list-col">
+        <div class="custom-list-head">
+          <h3>已有 Skill</h3>
+          <button id="newRuleBtn" class="btn btn-ghost btn-sm">+ 新建</button>
+        </div>
+        <div id="customList"></div>
+
+        <div class="preset-section">
+          <h3>预设模板</h3>
+          <p class="hint small">点击"套用"即可填入表单。</p>
+          <div id="presetList"></div>
+        </div>
+      </div>
+
+      <div class="custom-form-col">
+        <div class="custom-form">
+          <h3 id="formTitle">新建 Skill</h3>
+
+          <label>
+            <span class="lbl">规则名 <em>*</em></span>
+            <input type="text" id="ruleTitle" class="input" placeholder="例如：所有 Go 代码必须带解释性注释">
+          </label>
+
+          <label>
+            <span class="lbl">简介 <em>*</em></span>
+            <input type="text" id="ruleDesc" class="input" placeholder="一句话，会进 Cursor .mdc 的 description（建议英文，AI 识别更稳）">
+          </label>
+
+          <label>
+            <span class="lbl">为什么（违反会怎样）<em>*</em></span>
+            <textarea id="ruleReason" class="input area" rows="4" placeholder="AI 指出违规时会引用这段话解释后果。稳定性 / 精度 / 合规 / 性能 / 协作成本..."></textarea>
+          </label>
+
+          <label>
+            <span class="lbl">规则内容 <em>*</em></span>
+            <textarea id="ruleContent" class="input area" rows="8" placeholder="具体要求。用 - 列出子项。"></textarea>
+          </label>
+
+          <div class="form-row">
+            <div class="form-col">
+              <span class="lbl">作用范围</span>
+              <label class="radio-box small">
+                <input type="radio" name="applyTo" value="globs" checked>
+                <div><div class="radio-title">按文件匹配</div><div class="radio-desc">指定 glob 模式</div></div>
+              </label>
+              <label class="radio-box small">
+                <input type="radio" name="applyTo" value="always">
+                <div><div class="radio-title">永远生效</div><div class="radio-desc">所有场景都加载</div></div>
+              </label>
+            </div>
+            <div class="form-col" id="globsCol">
+              <span class="lbl">Glob 模式</span>
+              <input type="text" id="ruleGlobs" class="input" value="**/*.go" placeholder="**/*.go, migrations/**">
+              <small>逗号分隔多个；留空默认 <code>**/*.go</code></small>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="saveRuleBtn" class="btn btn-primary">💾 保存并同步</button>
+            <button id="cancelRuleBtn" class="btn btn-ghost" style="display:none;">取消编辑</button>
+          </div>
+
+          <div class="install-log" id="customLog"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== AI 人格 ========== -->
+  <section class="tab-panel" id="tab-persona">
+    <div class="page-head">
+      <h1>🎭 AI 人格（全局态度准则）</h1>
+      <p>给你本地 Claude Code + Cursor 全局注入工作态度：严谨求实、不敷衍、勤勉、交付诚实。保存后同步到 <code>~/.claude/CLAUDE.md</code> 和 <code>~/.cursor/rules/00-persona.mdc</code>。</p>
+    </div>
+
+    <div class="install-card" style="max-width: 960px;">
+      <div class="persona-status">
+        <span>Claude CLAUDE.md: <b id="personaClaudeStatus">–</b></span>
+        <span>Cursor 00-persona.mdc: <b id="personaCursorStatus">–</b></span>
+      </div>
+      <label>
+        <span class="lbl">准则内容（Markdown，会原样注入）</span>
+        <textarea id="personaContent" class="input area" rows="18" style="font-family: 'SF Mono', Menlo, monospace; font-size: 12.5px;"></textarea>
+        <small>保存后必须 <b>彻底重启</b> Claude Code / Cursor（Cmd+Q）才生效</small>
+      </label>
+      <div class="form-actions" style="gap: 10px;">
+        <button id="personaSaveBtn" class="btn btn-primary">💾 保存并同步到 Claude + Cursor</button>
+        <button id="personaResetBtn" class="btn btn-ghost">↺ 恢复默认</button>
+        <button id="personaRemoveBtn" class="btn btn-ghost danger">🗑 全部卸载</button>
+      </div>
+      <div class="install-log" id="personaLog"></div>
+    </div>
+  </section>
+
+  <!-- ========== Skill 市场 ========== -->
+  <!-- ========== 已装清单 ========== -->
+  <section class="tab-panel" id="tab-installed">
+    <div class="page-head">
+      <h1>📋 已装清单</h1>
+      <p>扫描本地 <code>~/.claude/skills/</code> 和 <code>~/.cursor/rules/</code>，显示实际安装的规则。</p>
+    </div>
+
+    <div class="installed-head">
+      <button id="refreshInstalledBtn" class="btn btn-ghost btn-sm">🔄 刷新</button>
+      <span class="legend">
+        <span class="tag team">团队</span>
+        <span class="tag custom">自定义</span>
+        <span class="tag other">其他</span>
+      </span>
+    </div>
+
+    <h3 class="installed-section">Claude Skills <code id="claudePath">~/.claude/skills/</code></h3>
+    <div id="claudeList" class="installed-list"></div>
+
+    <h3 class="installed-section">Cursor Rules <code id="cursorPath">~/.cursor/rules/</code></h3>
+    <div id="cursorList" class="installed-list"></div>
+
+    <h3 class="installed-section">Codex Skills <code>~/.codex/skills/</code></h3>
+    <div id="codexList" class="installed-list"></div>
+  </section>
+
+  <!-- ========== ⚡ Superpowers（v1.8.10）========== -->
+  <section class="tab-panel" id="tab-superpowers">
+    <div class="page-head">
+      <h1>⚡ Superpowers · 超能力技能包</h1>
+      <p>来自 <a href="https://github.com/obra/superpowers" target="_blank"><code>obra/superpowers</code></a> · 8 个覆盖完整开发工作流的 Claude Code skill，包含代码探索、规划、执行、调试、文档等能力。</p>
+    </div>
+
+    <!-- 顶部 2 列：安装 + 快速上手 -->
+    <div class="sp-top-grid">
+
+      <!-- 左：安装目标 + 状态 + 操作 -->
+      <div class="install-card" style="border-left: 3px solid var(--sys-indigo); margin: 0;">
+        <h3>📦 安装目标</h3>
+
+        <!-- 3 个目标卡片 -->
+        <div class="sp-target-row" id="spTargetBar">
+          <button class="sp-target-btn active" data-target="claude">
+            <span class="sp-tb-icon">🤖</span>
+            <span class="sp-tb-label">Claude Code</span>
+            <span class="sp-tb-sub">全局</span>
+          </button>
+          <button class="sp-target-btn" data-target="cursor">
+            <span class="sp-tb-icon">🖱️</span>
+            <span class="sp-tb-label">Cursor</span>
+            <span class="sp-tb-sub">全局</span>
+          </button>
+          <button class="sp-target-btn" data-target="project">
+            <span class="sp-tb-icon">📁</span>
+            <span class="sp-tb-label">项目级</span>
+            <span class="sp-tb-sub">指定目录</span>
+          </button>
+        </div>
+
+        <!-- 项目路径（项目级才显示） -->
+        <div id="spProjectPathRow" style="display:none;">
+          <input id="spProjectPathInput" class="input" type="text" placeholder="输入项目根目录路径，如 /Users/me/myproject" />
+          <button class="btn btn-ghost btn-sm" id="spProjectPathBrowse">📁 选目录</button>
+          <button class="btn btn-ghost btn-sm" id="spProjectPathConfirm">确认</button>
+        </div>
+
+        <!-- 安装状态 -->
+        <div id="spStatusPanel" class="tixuebj-status">检查中…</div>
+
+        <!-- 安装命令 -->
+        <div style="margin: 12px 0; padding: 9px 12px; background: var(--bg-mute); border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+          <code id="spInstallCmd" style="flex:1; user-select:all; font-size:12px;">/plugin install superpowers@claude-plugins-official</code>
+          <button id="spCopyCmdBtn" class="btn btn-ghost btn-sm">📋 复制</button>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="dist-buttons">
+          <button id="spInstallBtn" class="btn btn-primary" style="background: linear-gradient(135deg, var(--sys-indigo), var(--sys-blue));">🚀 一键安装</button>
+          <button id="spUninstallBtn" class="btn btn-ghost danger">🗑 卸载</button>
+          <button id="spRefreshBtn" class="btn btn-ghost btn-sm">🔄</button>
+        </div>
+        <p class="hint" style="margin-top: 8px; font-size: 12px;">
+          Claude Code：直接点「一键安装」或在对话框执行上方命令。<br>
+          Cursor：对话框执行 <code>/add-plugin superpowers</code>
+        </p>
+        <div class="install-log" id="spLog"></div>
+      </div>
+
+      <!-- 右：快速上手 3 步 -->
+      <div class="install-card" style="margin: 0;">
+        <h3>📖 快速上手</h3>
+        <div style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+          <div style="display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--sys-indigo),var(--sys-blue));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;">1</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:2px;">安装 Superpowers</div>
+              <div class="hint" style="font-size:12px;">选择安装目标（Claude Code 全局推荐），点「一键安装」。</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--sys-indigo),var(--sys-blue));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;">2</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:2px;">重启 Claude Code</div>
+              <div class="hint" style="font-size:12px;">Cmd+Q 完全退出再重开，让新 skill 加载进上下文。</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--sys-indigo),var(--sys-blue));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;">3</div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:2px;">用 /sp-* 命令开干</div>
+              <div class="hint" style="font-size:12px;">
+                <code>/sp-help</code> 看所有命令 &nbsp;·&nbsp;
+                <code>/sp-explore</code> 探索代码库<br>
+                <code>/sp-plan</code> 规划任务 &nbsp;·&nbsp;
+                <code>/sp-build</code> 执行开发
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8 个 Skill 卡片 -->
+    <div class="section-label">8 个核心 Skill</div>
+    <div class="sp-skill-grid">
+      <div class="sp-skill-card">
+        <div class="sp-skill-head"><span class="sp-skill-name">探索代码库</span><span class="sp-skill-tag">explore</span></div>
+        <div class="sp-skill-cmd">/sp-explore</div>
+        <div class="sp-skill-desc">深度分析代码库结构，理解架构、依赖、关键模块，为后续任务打基础。</div>
+      </div>
+      <div class="sp-skill-card">
+        <div class="sp-skill-head"><span class="sp-skill-name">智能规划</span><span class="sp-skill-tag">plan</span></div>
+        <div class="sp-skill-cmd">/sp-plan</div>
+        <div class="sp-skill-desc">拆解复杂任务，生成带依赖分析的实施计划，支持 wave 并行执行。</div>
+      </div>
+      <div class="sp-skill-card">
+        <div class="sp-skill-head"><span class="sp-skill-name">代码执行</span><span class="sp-skill-tag">build</span></div>
+        <div class="sp-skill-cmd">/sp-build</div>
+        <div class="sp-skill-desc">按计划逐步实现代码，原子提交，全程管理上下文不烂掉。</div>
+      </div>
+      <div class="sp-skill-card">
+        <div class="sp-skill-head"><span class="sp-skill-name">智能调试</span><span class="sp-skill-tag">debug</span></div>
+        <div class="sp-skill-cmd">/sp-debug</div>
+        <div class="sp-skill-desc">复现 → 假设 → 验证 → 修复，分析栈帧、日志、并发问题。</div>
+      </div>
+      <div class="sp-skill-card">
+        <div class="sp-skill-head"><span class="sp-skill-name">代码审查</span><span class="sp-skill-tag">review</span></div>
+        <div class="sp-skill-cmd">/sp-review</div>
+        <div class="sp-skill-desc">安全漏洞、性能瓶颈多维度检查，输出结构化 REVIEW.md。</div>
+      </div>
+      <div class="sp-skill-card">
+        <div class="sp-skill-head"><span class="sp-skill-name">文档生成</span><span class="sp-skill-tag">doc</span></div>
+        <div class="sp-skill-cmd">/sp-doc</div>
+        <div class="sp-skill-desc">自动生成 API 文档、架构说明、README，与代码保持同步。</div>
+      </div>
+      <div class="sp-skill-card">
+        <div class="sp-skill-head"><span class="sp-skill-name">测试生成</span><span class="sp-skill-tag">test</span></div>
+        <div class="sp-skill-cmd">/sp-test</div>
+        <div class="sp-skill-desc">覆盖边界情况、错误路径、并发场景的完整测试用例。</div>
+      </div>
+      <div class="sp-skill-card">
+        <div class="sp-skill-head"><span class="sp-skill-name">帮助中心</span><span class="sp-skill-tag">help</span></div>
+        <div class="sp-skill-cmd">/sp-help</div>
+        <div class="sp-skill-desc">完整命令参考、使用示例、最佳实践。随时查阅所有命令。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== AI 行为准则 ========== -->
+  <!-- ========== 强制约束 Hooks ========== -->
+  <section class="tab-panel" id="tab-hooks-guard">
+    <div class="section-inner">
+      <h1>🔒 强制约束</h1>
+      <p class="hint">安装到 <code>~/.claude/hooks/</code>，Claude Code 每次触发对应事件时自动执行。<br>
+        <strong>安装后立即生效，无需重启 Claude Code。</strong>
+      </p>
+
+      <!-- 作用域切换 -->
+      <div class="scope-bar" id="hooksGuardScopeBar">
+        <button class="scope-btn active" data-scope="global">🌐 全局（所有项目）</button>
+        <button class="scope-btn" data-scope="project">📁 项目级</button>
+      </div>
+      <div id="hooksGuardProjectPath" style="display:none; margin-bottom:12px;">
+        <input id="hooksGuardPathInput" class="path-input" type="text" placeholder="输入项目根目录路径，如 /Users/me/myproject" />
+        <button class="btn btn-ghost btn-sm" id="hooksGuardPathBrowse">📁 选目录</button>
+        <button class="btn btn-ghost btn-sm" id="hooksGuardPathConfirm">确认</button>
+      </div>
+      <p class="hint" id="hooksGuardScopeHint">
+        安装到 <code>~/.claude/hooks/</code>，对所有项目生效
+      </p>
+
+      <div id="hooksGuardList" style="margin-top:16px;">
+        <p style="color:var(--text-secondary)">加载中…</p>
+      </div>
+      <div class="install-log" id="hooksGuardLog"></div>
+    </div>
+  </section>
+
+  <!-- ========== 提示词 ========== -->
+  <section class="tab-panel" id="tab-prompts">
+    <div class="page-head">
+      <h1>💬 提示词</h1>
+      <p>项目工作流常用提示词，点击卡片一键复制。</p>
+    </div>
+
+    <!-- AGENTS.md 初始化 -->
+    <div class="install-card" style="border-left: 3px solid var(--sys-indigo); margin-bottom: 20px;">
+      <h3 style="margin-top:0;">📄 AGENTS.md 项目初始化</h3>
+      <p class="hint">在当前项目根目录创建 <code>AGENTS.md</code>，让 AI 默认使用中文、了解项目约定。首次进入项目时 Skill 会自动检测并提示初始化。</p>
+      <div style="display:flex; gap:8px; align-items:center; margin-top:10px;">
+        <input id="agentsInitPath" class="path-input" type="text" placeholder="输入项目根目录路径，如 /Users/me/myproject" style="flex:1;" />
+        <button class="btn btn-ghost btn-sm" id="agentsInitBrowse">📁 选目录</button>
+        <button class="btn btn-primary btn-sm" id="agentsInitBtn">生成 AGENTS.md</button>
+      </div>
+      <div class="install-log" id="agentsInitLog" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- 通用 Agent 适配 -->
+    <div class="install-card" style="border-left: 3px solid var(--sys-teal, #30b0c7); margin-bottom: 20px;">
+      <h3 style="margin-top:0;">🌐 通用 Agent 适配</h3>
+      <p class="hint">让 VSCode 里所有 AI 插件都用上团队规范：在项目根目录生成 <code>AGENTS.md</code>（事实标准，Codex / Copilot / Cline / Roo / Cursor 都读），并为 <strong>GitHub Copilot · Cline（DeepSeek 等模型）· Roo Code · Windsurf · Continue · Gemini · Claude Code</strong> 各生成一个指向 AGENTS.md 的入口文件。规范只维护一份，已存在的文件不覆盖。</p>
+      <div style="display:flex; gap:8px; align-items:center; margin-top:10px;">
+        <input id="universalPath" class="path-input" type="text" placeholder="输入项目根目录路径，如 /Users/me/myproject" style="flex:1;" />
+        <button class="btn btn-ghost btn-sm" id="universalBrowse">📁 选目录</button>
+        <button class="btn btn-primary btn-sm" id="universalBtn">一键适配全部 Agent</button>
+      </div>
+      <div class="install-log" id="universalLog" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- 提示词分组 -->
+    <div class="section-label" style="margin: 8px 0 10px;">🚀 项目启动</div>
+
+    <div class="prompt-card" data-prompt="请先不要修改任何代码。
+
+你现在只需要阅读项目结构，并告诉我：
+
+1. 这个项目是做什么的
+2. 使用了哪些技术栈
+3. 入口文件在哪里
+4. 启动和构建命令是什么
+5. 如果我要新增一个页面，应该从哪里开始">
+      <div class="prompt-card-header">
+        <span class="prompt-card-title">① 首次进入项目 — 探索结构</span>
+        <button class="prompt-copy-btn">复制</button>
+      </div>
+      <pre class="prompt-preview">请先不要修改任何代码。
+
+你现在只需要阅读项目结构，并告诉我：
+
+1. 这个项目是做什么的
+2. 使用了哪些技术栈
+3. 入口文件在哪里
+4. 启动和构建命令是什么
+5. 如果我要新增一个页面，应该从哪里开始</pre>
+    </div>
+
+    <div class="prompt-card" data-prompt="你刚才对项目的理解里，有哪些地方是不确定的？
+
+请列出来，并说明你还需要查看哪些文件。">
+      <div class="prompt-card-header">
+        <span class="prompt-card-title">② 首次进入项目 — 补充验证</span>
+        <button class="prompt-copy-btn">复制</button>
+      </div>
+      <pre class="prompt-preview">你刚才对项目的理解里，有哪些地方是不确定的？
+
+请列出来，并说明你还需要查看哪些文件。</pre>
+    </div>
+
+    <div class="section-label" style="margin: 20px 0 10px;">⏸ 执行中途暂停</div>
+
+    <div class="prompt-card" data-prompt="暂停刚才的方向。
+
+你现在的理解有问题。
+正确目标是 [XXX]。
+请基于当前 diff 重新评估，不要继续扩大修改范围。">
+      <div class="prompt-card-header">
+        <span class="prompt-card-title">暂停 &amp; 纠偏</span>
+        <span class="prompt-card-badge">需填写目标</span>
+        <button class="prompt-copy-btn">复制</button>
+      </div>
+      <pre class="prompt-preview">暂停刚才的方向。
+
+你现在的理解有问题。
+正确目标是 [XXX]。
+请基于当前 diff 重新评估，不要继续扩大修改范围。</pre>
+    </div>
+
+    <div class="section-label" style="margin: 20px 0 10px;">✅ 收尾</div>
+
+    <div class="prompt-card" data-prompt="请总结这次修改：
+1. 改了哪些文件
+2. 每个文件改了什么
+3. 为什么这样改
+4. 是否还有风险
+5. 建议我如何验证">
+      <div class="prompt-card-header">
+        <span class="prompt-card-title">需求完成后总结</span>
+        <button class="prompt-copy-btn">复制</button>
+      </div>
+      <pre class="prompt-preview">请总结这次修改：
+1. 改了哪些文件
+2. 每个文件改了什么
+3. 为什么这样改
+4. 是否还有风险
+5. 建议我如何验证</pre>
+    </div>
+
+    <div class="prompt-card" data-prompt="请总结这个任务。
+
+包括：
+1. 目标是什么
+2. 最终改了什么
+3. 已验证什么
+4. 还有什么风险
+5. 后续继续做应该从哪里开始">
+      <div class="prompt-card-header">
+        <span class="prompt-card-title">上下文总结（续接任务用）</span>
+        <button class="prompt-copy-btn">复制</button>
+      </div>
+      <pre class="prompt-preview">请总结这个任务。
+
+包括：
+1. 目标是什么
+2. 最终改了什么
+3. 已验证什么
+4. 还有什么风险
+5. 后续继续做应该从哪里开始</pre>
+    </div>
+
+  </section>
+
+  <!-- ========== 日志控制台 ========== -->
+  <section class="tab-panel" id="tab-logs">
+    <div class="page-head">
+      <h1>🪵 日志控制台</h1>
+      <p>最近 200 条操作：HTTP 请求 / shell 命令 / Claude API 调用 / 业务关键步骤。排错第一站。</p>
+    </div>
+
+    <div class="logs-toolbar">
+      <div class="logs-filters">
+        <label class="chk"><input type="checkbox" data-kind="http" checked> HTTP</label>
+        <label class="chk"><input type="checkbox" data-kind="shell" checked> Shell</label>
+        <label class="chk"><input type="checkbox" data-kind="api" checked> API</label>
+        <label class="chk"><input type="checkbox" data-kind="info" checked> Info</label>
+        <label class="chk"><input type="checkbox" id="logsOnlyErr"> 只看失败</label>
+      </div>
+      <div class="logs-actions">
+        <label class="chk"><input type="checkbox" id="logsAuto" checked> 自动刷新 2s</label>
+        <button id="logsRefreshBtn" class="btn btn-ghost btn-sm">🔄 刷新</button>
+        <button id="logsClearBtn" class="btn btn-ghost btn-sm danger">🗑 清空</button>
+      </div>
+    </div>
+
+    <div class="logs-stats">
+      <span>共 <b id="logsTotal">0</b> 条</span>
+      <span>失败 <b id="logsErrs" style="color:var(--err)">0</b></span>
+      <span>Shell <b id="logsShell">0</b></span>
+      <span>API <b id="logsApi">0</b></span>
+      <span>HTTP <b id="logsHttp">0</b></span>
+    </div>
+
+    <div class="logs-list" id="logsList"></div>
+  </section>
+
+  <!-- ========== 测试 Skill ========== -->
+  <section class="tab-panel" id="tab-eval">
+    <div class="page-head">
+      <h1>🧪 测试 Skill 有效性</h1>
+      <p>自动跑 <span id="evalTotalCases">–</span> 条违规代码用例，调 Claude API 检查 SKILL.md + references 是否让 AI 正确识别并按团队规范反馈。prompt caching 让 20 条批量跑只按 1 次 full input 计费。</p>
+    </div>
+
+    <div class="install-card" style="max-width: 960px;">
+      <h3>1. AI 配置（公司本地大模型 · Clawnova）</h3>
+      <p class="hint" style="font-size:12px;">
+        Skill 测试统一走公司内部 OpenAI 兼容服务 <code id="evalProviderName">Clawnova</code>。
+        Key 保存到 <code>~/Library/Application Support/TeamStandards/eval-config.json</code>（权限 0600，仅本人可读，不进 git）。
+      </p>
+
+      <label>
+        <span class="lbl">API Base</span>
+        <input type="text" id="evalApiBase" class="input" value="https://clawnova.ai/api/v1">
+        <small>OpenAI 兼容端点。一般不动，除非走代理。</small>
+      </label>
+
+      <label>
+        <span class="lbl">API Key <em>*</em></span>
+        <input type="password" id="evalKey" class="input" placeholder="kgb_... （从 IDP 平台领取）">
+        <small id="evalKeyHint">已存的 key 显示星号化预览：<code id="evalKeyMasked">未配置</code>。粘新 key 会覆盖。</small>
+      </label>
+
+      <div class="form-grid">
+        <label>
+          <span class="lbl">模型</span>
+          <select id="evalModel" class="input"></select>
+        </label>
+        <label>
+          <span class="lbl">温度</span>
+          <input type="number" id="evalTemp" class="input" value="0" min="0" max="1" step="0.1">
+        </label>
+      </div>
+
+      <div class="dist-buttons" style="margin-top:8px;">
+        <button id="evalConfigSaveBtn" class="btn btn-primary">💾 保存配置</button>
+        <button id="evalConfigClearBtn" class="btn btn-ghost danger">🗑 清除已存 Key</button>
+        <button id="evalTestConnBtn" class="btn btn-ghost">🔌 测试连接</button>
+      </div>
+      <div class="install-log" id="evalConfigLog"></div>
+
+      <h3 style="margin-top:20px;">2. 运行 Skill 测试（需先保存配置）</h3>
+      <div class="dist-buttons">
+        <button id="evalPingBtn" class="btn btn-ghost btn-lg">🔌 先跑 1 条测连通</button>
+        <button id="evalRunBtn" class="btn btn-primary btn-lg">🚀 运行全部 API 测试</button>
+      </div>
+
+      <h3 style="margin-top: 24px;">🆓 无需 API Key 的方案</h3>
+      <p class="hint" style="font-size:12px;">两种无额度消耗的本地测试：</p>
+      <div class="dist-buttons">
+        <button id="evalLintBtn" class="btn btn-ghost btn-lg">🔍 SKILL 结构自检</button>
+        <button id="evalExportBtn" class="btn btn-ghost btn-lg">📋 导出测试 prompt</button>
+      </div>
+      <p class="hint" style="font-size:12px; margin-top:8px;">
+        <b>🔍 结构自检</b>：扫描已装的 SKILL.md / references，毫秒完成，检查 12 条铁律 + 路由表 + 自定义规则是否完整。<br>
+        <b>📋 导出 prompt</b>：生成 md 文件含 20 个违规代码，粘进你自己的 Cursor / Claude Code 聊天（团队 skill 已装好的那个），人工看 AI 反应。<strong>日常工作场景测试，最真实</strong>。
+      </p>
+      <p class="hint" style="margin-top:8px;font-size:12px;">建议先点「🔌 测连通」跑 1 条，确认 API key 和模型能正常响应，再跑全部 20 条。</p>
+      <div class="install-log" id="evalLog"></div>
+    </div>
+
+    <div id="evalReport" class="eval-report" style="display:none;">
+      <h3>测试报告</h3>
+      <div class="eval-summary" id="evalSummary"></div>
+      <div class="eval-cases" id="evalCases"></div>
+    </div>
+  </section>
+
+  <!-- ========== 新建项目 ========== -->
+  <section class="tab-panel" id="tab-scaffold">
+    <div class="page-head">
+      <h1>🏗️ 新建项目</h1>
+      <p>基于 <code>mask-go-sample-service</code> 模板一键生成新微服务。填表 → 选目录 → 点生成。</p>
+    </div>
+
+    <div class="install-card" style="max-width: 860px;">
+      <h3>1. 基本信息</h3>
+      <div class="form-grid">
+        <label>
+          <span class="lbl">项目名称 <em>*</em></span>
+          <input type="text" id="sfName" class="input" placeholder="zoo-service" autocomplete="off">
+          <small>kebab-case，自动推导 Module 和业务域</small>
+        </label>
+        <label>
+          <span class="lbl">业务域 <em>*</em></span>
+          <input type="text" id="sfBiz" class="input" placeholder="zoo">
+          <small>用于 <code>api/&lt;biz&gt;/</code>、proto package、schema</small>
+        </label>
+      </div>
+      <label>
+        <span class="lbl">Go Module <em>*</em></span>
+        <input type="text" id="sfModule" class="input" placeholder="github.com/company/zoo-service">
+      </label>
+
+      <h3>2. 网络端口</h3>
+      <div class="form-grid">
+        <label>
+          <span class="lbl">HTTP 端口</span>
+          <input type="number" id="sfHTTP" class="input" value="8000" min="1024" max="65535">
+        </label>
+        <label>
+          <span class="lbl">gRPC 端口</span>
+          <input type="number" id="sfGRPC" class="input" value="9000" min="1024" max="65535">
+        </label>
+      </div>
+
+      <h3>3. 作者 & 输出</h3>
+      <label>
+        <span class="lbl">作者 / 工号</span>
+        <input type="text" id="sfAuthor" class="input" placeholder="zhang.san">
+      </label>
+      <label>
+        <span class="lbl">输出目录 <em>*</em></span>
+        <div class="path-row">
+          <input type="text" id="sfOutDir" class="input" placeholder="/Users/xxx/dev  或点击右侧按钮">
+          <button id="sfPickDir" class="btn btn-ghost">📂 选择目录</button>
+        </div>
+        <small>生成到 <code>&lt;输出目录&gt;/&lt;项目名&gt;/</code></small>
+      </label>
+
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer;"><h3 style="display:inline-block; margin:0;">4. 选项</h3> <span class="hint" style="font-size:12px;">（点击展开 · 默认已按推荐预选）</span></summary>
+        <div style="margin-top:10px;">
+          <div class="checkbox-row">
+            <label class="check-item"><input type="checkbox" id="sfSkeleton"> 只留空骨架（删除示例 Order 业务代码）</label>
+            <label class="check-item"><input type="checkbox" id="sfGit" checked> 初始化 git 仓库</label>
+            <label class="check-item"><input type="checkbox" id="sfTidy" checked> 生成后自动跑 <code>go mod tidy</code></label>
+          </div>
+          <div class="checkbox-row" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);">
+            <label class="check-item">
+              <input type="checkbox" id="sfGenSkillTest">
+              🧪 生成 Skill 有效性测试用例（<code>.docs/skill-test-cases/</code>）
+            </label>
+          </div>
+          <div id="sfGenSkillTestDetail" class="hint" style="font-size:12px; margin:4px 0 0 24px; display:none;">
+            包含 15 个 Go 违规用例（对应铁律 1-14 + 单测反模式），每个带 <code>//go:build skill_test_only</code> tag 默认不编译；放到 <code>.docs/</code> 并自动追加到 <code>.gitignore</code>，不会进 git。用来验证团队规范 Skill 是否真的会触发 + 命中。
+          </div>
+        </div>
+      </details>
+
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer;"><h3 style="display:inline-block; margin:0;">5. common-lib 组件</h3> <span class="hint" style="font-size:12px;">（点击展开 · 勾选的会在 yaml 取消注释）</span></summary>
+      <p class="hint" style="font-size:12px; margin:8px 0 8px;">勾选的会在 <code>configs/dev/&lt;biz&gt;.yaml</code> 里取消注释 / 填入默认配置。代码不动，**随时手动改 yaml 也能启停**。</p>
+      <div class="component-grid">
+        <label class="component-item" data-comp="postgres">
+          <input type="checkbox" id="compPG" checked>
+          <span class="comp-icon">🐘</span>
+          <span class="comp-name">PostgreSQL</span>
+          <span class="comp-desc">主数据库（Order 示例依赖）</span>
+        </label>
+        <label class="component-item" data-comp="redis">
+          <input type="checkbox" id="compRedis" checked>
+          <span class="comp-icon">🔴</span>
+          <span class="comp-name">Redis</span>
+          <span class="comp-desc">缓存 / 分布式锁 / 幂等键</span>
+        </label>
+        <label class="component-item" data-comp="kafka">
+          <input type="checkbox" id="compKafka" checked>
+          <span class="comp-icon">📬</span>
+          <span class="comp-name">Kafka</span>
+          <span class="comp-desc">消息队列（MQ）</span>
+        </label>
+        <label class="component-item" data-comp="alarm" data-requires="compKafka">
+          <input type="checkbox" id="compAlarm" checked>
+          <span class="comp-icon">🚨</span>
+          <span class="comp-name">Alarm</span>
+          <span class="comp-desc">告警系统（需 Kafka）</span>
+        </label>
+        <label class="component-item" data-comp="cron" data-requires="compPG">
+          <input type="checkbox" id="compCron" checked>
+          <span class="comp-icon">⏰</span>
+          <span class="comp-name">Cron</span>
+          <span class="comp-desc">定时任务（需 PostgreSQL）</span>
+        </label>
+      </div>
+      </details>
+
+      <h3>5. 模板来源</h3>
+      <div class="radio-row">
+        <label class="radio-box">
+          <input type="radio" name="sfTplType" value="local" checked>
+          <div><div class="radio-title">本地目录</div><div class="radio-desc">已 clone 下来的路径</div></div>
+        </label>
+        <label class="radio-box">
+          <input type="radio" name="sfTplType" value="git">
+          <div><div class="radio-title">Git 仓库</div><div class="radio-desc">自动 clone 临时目录</div></div>
+        </label>
+      </div>
+
+      <label id="sfTplLocalRow">
+        <span class="lbl">本地模板路径</span>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="sfTplPath" class="input" value="" style="flex:1;">
+          <button type="button" id="sfTplPickBtn" class="btn btn-ghost" style="flex:0 0 auto;">📁 浏览…</button>
+        </div>
+        <small id="sfTplStatus" class="tpl-status">检查中…</small>
+      </label>
+
+      <div id="sfTplGitRow" style="display:none;">
+        <label>
+          <span class="lbl">模板 Git URL <em>*</em></span>
+          <input type="text" id="sfTplGitURL" class="input"
+            value=""
+            placeholder="git@...">
+        </label>
+        <label>
+          <span class="lbl">分支（可选）</span>
+          <input type="text" id="sfTplBranch" class="input" value="main" placeholder="留空用默认分支">
+        </label>
+      </div>
+
+      <h3>6. 新项目 Git 远端（可选，勾选 git init 时生效）</h3>
+      <label>
+        <span class="lbl">新项目 Git URL</span>
+        <input type="text" id="sfRemoteURL" class="input" placeholder="git init 后设置为 origin；留空则只本地 init 不设 remote">
+        <small>Git 模式下会根据项目名自动填充，可改</small>
+      </label>
+      <details class="advanced-details">
+        <summary>高级：GitLab API 自动创建远端空仓库（填了 Token 才执行）</summary>
+        <div class="form-grid">
+          <label>
+            <span class="lbl">GitLab API Base</span>
+            <input type="text" id="sfGitLabAPI" class="input" value="" placeholder="https://your-git-server.com/api/v4">
+          </label>
+          <label>
+            <span class="lbl">目标 Group/Namespace</span>
+            <input type="text" id="sfGitLabGroup" class="input" value="" placeholder="your-group/subgroup">
+          </label>
+        </div>
+        <label>
+          <span class="lbl">GitLab Personal Access Token（api scope）</span>
+          <input type="password" id="sfGitLabToken" class="input" placeholder="留空则不自动建仓，手动在 Web 建即可">
+          <small>Token 不会保存，只这次用。需要 <code>api</code> scope 权限。</small>
+        </label>
+      </details>
+
+      <button id="sfCreateBtn" class="btn btn-primary btn-lg">🚀 开始生成</button>
+      <div class="install-log" id="sfLog"></div>
+    </div>
+  </section>
+
+  <!-- ========== 安装 ========== -->
+  <section class="tab-panel" id="tab-install">
+    <div class="page-head">
+      <h1>安装</h1>
+      <p>装 Skill / 规则 / 命令到 Claude Code 与 Cursor。底部分段切换不同类目。</p>
+    </div>
+
+    <!-- Segmented Control -->
+    <div class="seg" data-seg-group="install">
+      <button type="button" class="seg-item active" data-sub="basic">基础</button>
+      <button type="button" class="seg-item" data-sub="update">更新与同步</button>
+      <button type="button" class="seg-item" data-sub="advanced">进阶 Skill</button>
+      <button type="button" class="seg-item" data-sub="distrib">打包分发</button>
+    </div>
+
+    <!-- ===== 基础 ===== -->
+    <div class="subpage active" data-sub="basic">
+
+      <!-- Hero 状态卡（动态填） -->
+      <div class="hero" id="installHero">
+        <div>
+          <h2 id="installHeroTitle">所有规范都已就绪</h2>
+          <p id="installHeroSub">加载中…</p>
+        </div>
+        <div class="num-big" id="installHeroNum">–</div>
+      </div>
+
+      <!-- 4 格统计 -->
+      <div class="mini-tiles">
+        <div class="mini" id="miniTileSkills">
+          <div class="lbl">规范模块</div>
+          <div class="num" id="miniSkillsNum">–</div>
+          <div class="delta"><span class="dot"></span><span id="miniSkillsDelta">加载中</span></div>
+        </div>
+        <div class="mini" id="miniTileVer">
+          <div class="lbl">版本</div>
+          <div class="num" id="miniVerNum" style="font-size:18px;">v…</div>
+          <div class="delta"><span class="dot"></span>当前安装包</div>
+        </div>
+        <div class="mini" id="miniTileCustom">
+          <div class="lbl">自定义规则</div>
+          <div class="num" id="miniCustomNum">–</div>
+          <div class="delta"><span class="dot"></span><span id="miniCustomDelta">加载中</span></div>
+        </div>
+        <div class="mini" id="miniTileCmds">
+          <div class="lbl">快捷命令</div>
+          <div class="num" id="miniCmdsNum">–</div>
+          <div class="delta"><span class="dot"></span><span id="miniCmdsDelta">加载中</span></div>
+        </div>
+      </div>
+
+      <div class="install-card">
+        <h3>1. 作用范围</h3>
+      <div class="radio-row">
+        <label class="radio-box">
+          <input type="radio" name="scope" value="global" checked>
+          <div>
+            <div class="radio-title">全局安装</div>
+            <div class="radio-desc"><code>~/.claude/skills</code> + <code>~/.cursor/rules</code></div>
+          </div>
+        </label>
+        <label class="radio-box">
+          <input type="radio" name="scope" value="project">
+          <div>
+            <div class="radio-title">项目安装</div>
+            <div class="radio-desc">指定项目根目录</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="project-path" id="projectPathRow" style="display:none;">
+        <div style="display: flex; gap: 6px; align-items: stretch;">
+          <input type="text" id="projectPath" class="input" placeholder="/absolute/path/to/your-service" style="flex: 1;">
+          <button id="projectPathBrowseBtn" class="btn btn-ghost btn-sm" type="button" style="flex-shrink: 0; min-width: 90px;">📁 选目录</button>
+        </div>
+        <small>首次安装会生成 <code>.cursorignore</code>（已存在则跳过并提示）· 点「选目录」用 macOS 原生选择器</small>
+      </div>
+
+      <h3>2. 安装目标</h3>
+      <div class="radio-row radio-row-2x2">
+        <label class="radio-box">
+          <input type="radio" name="target" value="all" checked>
+          <div><div class="radio-title">全部</div><div class="radio-desc">Claude + Cursor + Codex</div></div>
+        </label>
+        <label class="radio-box">
+          <input type="radio" name="target" value="claude">
+          <div><div class="radio-title">仅 Claude</div><div class="radio-desc">~/.claude/skills/</div></div>
+        </label>
+        <label class="radio-box">
+          <input type="radio" name="target" value="cursor">
+          <div><div class="radio-title">仅 Cursor</div><div class="radio-desc">~/.cursor/rules/</div></div>
+        </label>
+        <label class="radio-box">
+          <input type="radio" name="target" value="codex">
+          <div><div class="radio-title">仅 Codex</div><div class="radio-desc">~/.codex/skills/</div></div>
+        </label>
+      </div>
+
+      <button id="installBtn" class="btn btn-primary btn-lg">⚡ 立即安装（覆盖已有）</button>
+      <div class="install-log" id="installLog"></div>
+    </div>
+
+    </div><!-- /subpage:basic -->
+
+    <!-- ===== 更新与同步 ===== -->
+    <div class="subpage" data-sub="update">
+
+    <div class="install-card share-card" style="border-left: 3px solid var(--sys-blue);">
+      <h3>☁️ 规范云端同步（GitHub 公开仓库）</h3>
+      <p class="hint">
+        规范不再绑定 App 版本——配置一次规范仓库 URL（GitHub），App 启动时静默检查；规范 owner 推新版本，团队下次启动 App 即可一键拉取。<br>
+        <strong>同步范围</strong>：仅 <code>standards/*.md</code> 源文件 → 自动覆盖到 <code>~/.claude/skills/go-team-standards/references/</code> 和 <code>~/.cursor/skills-cursor/.../references/</code>。SKILL.md / commands / 二进制不动。
+      </p>
+
+      <div id="standardsSyncStatus" class="tixuebj-status" style="margin-top: 8px;">检查中…</div>
+
+      <details style="margin-top: 12px;">
+        <summary style="cursor:pointer; font-weight:600;">🌐 HTTP 代理（内网不通时配）</summary>
+        <div style="margin-top: 8px;">
+          <p class="hint" style="font-size: 12px;">
+            如果 App 连不上 <code>your-git-server.com</code>，配代理（如本地 Clash/V2Ray 走 <code>http://127.0.0.1:1087</code>）。
+            影响**所有** HTTP 出站：规范云同步 / App 自动更新检查 / 一键升级下载。
+          </p>
+          <label style="display: flex; align-items: center; gap: 6px; margin: 6px 0;">
+            <input type="checkbox" id="proxyEnabled" style="margin: 0;">
+            <span class="lbl" style="margin: 0;">启用代理</span>
+          </label>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="proxyURL" class="input"
+                   placeholder="http://127.0.0.1:1087"
+                   style="flex: 1; font-family: var(--mono); font-size: 12.5px;">
+            <button id="proxySaveBtn" class="btn btn-primary btn-sm">💾 保存</button>
+          </div>
+          <small style="color: var(--label-3);">设置存 <code>~/Library/Application Support/TeamStandards/proxy.json</code>。也可以用 <code>HTTPS_PROXY</code> 环境变量启动 App。</small>
+        </div>
+      </details>
+
+      <details style="margin-top: 12px;" id="standardsSyncConfigDetails">
+        <summary style="cursor:pointer; font-weight:600;">⚙️ 配置 / 修改规范仓库 URL</summary>
+        <div style="margin-top: 8px;">
+          <label style="display:block; margin-bottom: 8px;">
+            <span class="lbl">仓库 URL（公开 readonly mirror）</span>
+            <input type="text" id="standardsSyncRepoURL" class="input"
+                   value="https://github.com/kary2999/standards.git"
+                   placeholder="https://github.com/kary2999/standards.git"
+                   style="font-family: var(--mono); font-size: 12.5px;">
+            <small>默认指向团队规范仓（公开 readonly mirror）。改成自己的 mirror 也行。</small>
+          </label>
+          <label style="display:block; margin-bottom: 8px;">
+            <span class="lbl">分支</span>
+            <input type="text" id="standardsSyncBranch" class="input" value="main"
+                   style="font-family: var(--mono); font-size: 12.5px; width: 200px;">
+          </label>
+          <button id="standardsSyncSaveBtn" class="btn btn-primary btn-sm">💾 保存并测试连通</button>
+        </div>
+      </details>
+
+      <div class="dist-buttons" style="margin-top: 12px;">
+        <button id="standardsSyncCheckBtn" class="btn btn-ghost">🔍 检查更新</button>
+        <button id="standardsSyncPullBtn" class="btn btn-primary">📥 拉取最新规范</button>
+      </div>
+
+      <div class="install-log" id="standardsSyncLog"></div>
+    </div>
+
+    <div class="install-card share-card" id="appUpdateCard" style="border-left: 3px solid var(--sys-indigo);">
+      <h3>🆕 App 版本更新</h3>
+      <p class="hint">当前版本 <strong id="appCurrentVersion">-</strong>　·　最新版本 <strong id="appLatestVersion">检查中…</strong></p>
+      <div class="dist-buttons" style="margin-top: 8px;">
+        <button id="appUpdateCheckBtn" class="btn btn-ghost">🔍 检查更新</button>
+        <button id="appUpdateInstallBtn" class="btn btn-primary" style="display:none;">🚀 立即升级</button>
+      </div>
+      <div class="install-log" id="appUpdateLog"></div>
+    </div>
+
+    <div class="install-card share-card">
+      <h3>🔄 一键更新规范到最新版</h3>
+      <p class="hint">
+        把本地的 <code>~/.claude/skills/go-team-standards/</code> 与 <code>~/.cursor/rules/</code> 覆盖为当前 App 内置最新版。
+        通过 SM 添加的 <code>custom-*.md</code> / <code>custom-*.mdc</code> 会被保留。
+      </p>
+      <div class="dist-buttons" style="margin-top:8px;">
+        <button id="updateAllBtn" class="btn btn-primary btn-lg">🔄 一键更新</button>
+        <button id="updateAllCheckBtn" class="btn btn-ghost">🔍 先看差多少</button>
+      </div>
+      <div class="install-log" id="updateAllLog"></div>
+    </div>
+
+    <div class="install-card share-card">
+      <h3>📊 规范覆盖检查（详情）</h3>
+      <p class="hint">扫描已安装规范文件 vs App 内置清单，逐个 hash 比对：<strong>🟢 已最新 · 🟡 过时 · ❌ 缺失 · 🔷 自定义（白名单）</strong>。</p>
+      <div class="dist-buttons" style="margin-top:8px;">
+        <button id="coverageCheckBtn" class="btn btn-primary">🔍 开始检查</button>
+        <button id="coverageFixBtn" class="btn btn-ghost" disabled>📥 一键补齐</button>
+      </div>
+      <div id="coverageResult" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="install-card share-card" style="border-left: 3px solid var(--sys-red);">
+      <h3>📋 提交规范化 · pre-commit hook（v1.7.37）</h3>
+      <p class="hint">
+        Skill 是<strong>软约束</strong>（AI 建议层），用户改完代码可绕过。
+        本卡片装 <strong>硬关卡</strong>：pre-commit hook 在 <code>git commit</code> 时 grep 检查 16 条核心规则，违规直接拒绝。
+        覆盖：硬编码密钥 / 金额 float / SELECT * / 外键 / 用户字段 uid / 时间 _at 后缀 / 软删 deleted_at / 等。
+      </p>
+
+      <label style="display:block; margin-top: 10px;">
+        <span class="lbl">项目根目录（必须含 .git）</span>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="commitGuardPath" class="input"
+                 placeholder="/path/to/your-service"
+                 style="flex: 1; font-family: var(--mono); font-size: 12.5px;">
+          <button id="commitGuardCheckPathBtn" class="btn btn-sm">🔍 检查</button>
+        </div>
+      </label>
+
+      <div id="commitGuardStatus" class="tixuebj-status" style="margin-top: 10px; display: none;"></div>
+
+      <div class="dist-buttons" style="margin-top: 10px;">
+        <button id="commitGuardInstallBtn" class="btn btn-primary" disabled>📥 装 pre-commit hook</button>
+        <button id="commitGuardCheckBtn" class="btn btn-ghost" disabled>🧪 试跑一次（--all 扫整个仓库）</button>
+        <button id="commitGuardUninstallBtn" class="btn btn-ghost danger" disabled>🗑 卸载</button>
+      </div>
+
+      <details style="margin-top: 10px;">
+        <summary style="cursor:pointer; font-weight:600; font-size: 12.5px;">📜 GitLab CI gate（Layer 3 · 阻塞 MR merge）</summary>
+        <div style="margin-top: 8px; font-size: 12px;">
+          把以下 job 拷进你项目的 <code>.gitlab-ci.yml</code>，配合上面装的 <code>scripts/team-standards-check.sh</code>（hook 装好后已经在你项目里），违规会 MR 红灯阻断 merge：
+          <pre id="commitGuardCISnippet" class="markdown-box" style="margin-top: 6px; max-height: 280px; font-size: 11.5px;">加载中…</pre>
+          <button id="commitGuardCopyCIBtn" class="btn btn-sm">📋 复制 YAML</button>
+        </div>
+      </details>
+
+      <div class="install-log" id="commitGuardLog"></div>
+    </div>
+
+    <div class="install-card share-card">
+      <h3>📁 项目级 Skill 同步</h3>
+      <p class="hint">
+        全局 <code>~/.claude/skills/</code> + <code>~/.cursor/rules/</code> 由「一键更新」覆盖。
+        但项目里的 <code>&lt;proj&gt;/.cursor/rules/</code> 或 <code>&lt;proj&gt;/.claude/skills/</code> 全局更新碰不到。
+      </p>
+      <label style="display:block; margin-top:10px;">
+        <span class="lbl">扫描根目录</span>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="projScanRoot" class="input"
+                 value=""
+                 style="flex:1; font-family:ui-monospace,Menlo,monospace; font-size:12px;">
+          <button id="projScanBtn" class="btn btn-primary" style="flex:0 0 auto;">🔍 扫描</button>
+        </div>
+        <small>深度 5 层内含 <code>.cursor/</code> 或 <code>.claude/</code> 的项目（跳过 node_modules / vendor / dist）</small>
+      </label>
+      <div id="projScanResult" style="margin-top:12px;"></div>
+    </div>
+
+    </div><!-- /subpage:update -->
+
+    <!-- ===== 进阶 Skill ===== -->
+    <div class="subpage" data-sub="advanced">
+
+    <div class="install-card share-card">
+      <h3>⌨️ Slash Commands · 主动调用</h3>
+      <p class="hint">
+        与 Skill / Rules 不同，Slash Command 是**用户主动 `/<name>` 调用**的模板。
+        意图明确、产出可控、不占基础 context。装到 <code>~/.claude/commands/</code> 和 <code>~/.cursor/commands/</code>。
+        **架构对照**：
+      </p>
+      <table style="width:100%; margin:8px 0; font-size:12px; border-collapse:collapse;">
+        <thead><tr style="background:rgba(168,85,247,0.1);">
+          <th style="padding:6px; text-align:left;">形态</th>
+          <th style="padding:6px; text-align:left;">何时生效</th>
+          <th style="padding:6px; text-align:left;">举例</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:6px;"><strong>Skill</strong></td><td style="padding:6px;">模型按 description 决定（被动）</td><td style="padding:6px;">go-team-standards / dev-dna / orangecat</td></tr>
+          <tr><td style="padding:6px;"><strong>Rules</strong> alwaysApply</td><td style="padding:6px;">每次对话强制注入</td><td style="padding:6px;">14 条铁律 (00-iron-laws.mdc)</td></tr>
+          <tr><td style="padding:6px;"><strong>Rules</strong> globs</td><td style="padding:6px;">编辑命中文件时自动加载</td><td style="padding:6px;">15-doc-trigger.mdc (.md 触发)</td></tr>
+          <tr><td style="padding:6px;"><strong>Slash Command</strong></td><td style="padding:6px;"><strong>用户主动 / 调用</strong></td><td style="padding:6px;">/tech-design / /design-table</td></tr>
+        </tbody>
+      </table>
+
+      <div id="commandsList" style="margin-top:8px; font-size:13px;">加载中…</div>
+
+      <div class="dist-buttons" style="margin-top:10px;">
+        <button id="commandsInstallBtn" class="btn btn-primary">📥 安装全部 (Claude + Cursor)</button>
+        <button id="commandsUninstallBtn" class="btn btn-ghost danger">🗑 卸载</button>
+      </div>
+      <div class="install-log" id="commandsLog"></div>
+    </div>
+
+    <div class="install-card share-card">
+      <h3>🐱 OrangeCat · 提测文档 Skill（独立管理）</h3>
+      <p class="hint">给<strong>测试同学</strong>看的提测文档生成器。聚焦接口变更 / SQL 变更 / 脚本影响 / 开发自测报告；生成前做真实性校验 —— 说不清楚的改动不给生成。Claude / Cursor 里说"提测"、"生成提测报告"、"OrangeCat"触发。</p>
+      <div class="tixuebj-status" id="orangecatStatus">检查中…</div>
+      <div class="dist-buttons" style="margin-top:10px;">
+        <button id="orangecatInstallBtn" class="btn btn-primary">📥 独立安装</button>
+        <button id="orangecatUninstallBtn" class="btn btn-ghost danger">🗑 卸载</button>
+        <button id="orangecatExportZipBtn" class="btn btn-ghost">📦 导出 zip</button>
+        <button id="orangecatExportMdBtn" class="btn btn-ghost">📋 复制 SKILL.md</button>
+      </div>
+
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer; font-weight:600;">📝 报告模板（QA 版 + 开发版 各可编辑）</summary>
+        <div style="margin-top:8px;">
+          <div class="dist-buttons" style="margin-bottom:8px;">
+            <button type="button" class="btn btn-sm orangecat-tpl-tab active" data-which="qa">📤 QA 版</button>
+            <button type="button" class="btn btn-sm btn-ghost orangecat-tpl-tab" data-which="dev">🛠️ 开发版</button>
+          </div>
+          <div class="hint" id="orangecatTplSource" style="margin-bottom:6px;">加载中…</div>
+          <textarea id="orangecatTplEditor" rows="14" style="width:100%; font-family:ui-monospace,Menlo,monospace; font-size:12px; padding:8px;"></textarea>
+          <div class="dist-buttons" style="margin-top:8px;">
+            <button id="orangecatTplSaveBtn" class="btn btn-primary btn-sm">💾 保存当前版本</button>
+            <button id="orangecatTplResetBtn" class="btn btn-ghost btn-sm danger">↺ 恢复默认</button>
+            <button id="orangecatTplReloadBtn" class="btn btn-ghost btn-sm">🔄 重新加载</button>
+          </div>
+          <p class="hint" style="margin-top:6px; font-size:12px;">💡 QA 版和开发版<strong>分开保存</strong>；切 Tab 不会丢未保存的内容。保存后点上方「独立安装」才会真正写入 skill。</p>
+        </div>
+      </details>
+
+      <div class="install-log" id="orangecatLog"></div>
+    </div>
+
+    <div class="install-card share-card">
+      <h3>🧬 Dev DNA · 我的开发档案 Skill（独立管理）</h3>
+      <p class="hint">
+        装载你**自己**的技术个性：栈偏好、命名风格、错误处理倾向、常用模式、反偏好。
+        换电脑/换 AI 客户端后一秒恢复"AI 认得你"。Skill 头部含**反蒸馏声明** + provider opt-out 指南。
+        与 go-team-standards / Persona 互补，不冲突（个人偏好 vs 团队规范 vs 工作态度）。
+      </p>
+      <div class="tixuebj-status" id="devDnaStatus">检查中…</div>
+      <div class="dist-buttons" style="margin-top:10px;">
+        <button id="devDnaInstallBtn" class="btn btn-primary">📥 独立安装</button>
+        <button id="devDnaUninstallBtn" class="btn btn-ghost danger">🗑 卸载</button>
+        <button id="devDnaExportZipBtn" class="btn btn-ghost">📦 导出 zip</button>
+      </div>
+
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer; font-weight:600;">📝 编辑我的档案 (profile.md)</summary>
+        <div style="margin-top:8px;">
+          <div class="hint" id="devDnaProfileSource" style="margin-bottom:6px;">加载中…</div>
+          <textarea id="devDnaProfileEditor" rows="20"
+            style="width:100%; font-family:ui-monospace,Menlo,monospace; font-size:12px; padding:8px;"></textarea>
+          <div class="dist-buttons" style="margin-top:8px;">
+            <button id="devDnaProfileSaveBtn" class="btn btn-primary btn-sm">💾 保存档案</button>
+            <button id="devDnaProfileResetBtn" class="btn btn-ghost btn-sm danger">↺ 恢复默认</button>
+            <button id="devDnaProfileReloadBtn" class="btn btn-ghost btn-sm">🔄 重新加载</button>
+          </div>
+          <p class="hint" style="margin-top:6px; font-size:12px;">
+            💡 保存到 <code>~/Library/Application Support/TeamStandards/dev-dna-profile.md</code>（权限 0600，仅本人可读）。
+            点上方「独立安装」才会写入 skill。<strong>禁止填手机号 / 身份证 / 真名 / 公司机密项目代号</strong>。
+          </p>
+        </div>
+      </details>
+
+      <details style="margin-top:8px;">
+        <summary style="cursor:pointer; font-weight:600; color:#e0a800;">🛡 反蒸馏 - 一定要看（隐私边界）</summary>
+        <div style="margin-top:8px; font-size:12px; color:#bbb;">
+          <p><strong>Skill 头部的 <code>privacy:</code> 声明只是软约束</strong>，模型行为不会因此真改。<strong>真正生效</strong>需要在 provider 端开 opt-out：</p>
+          <ul>
+            <li>Anthropic Claude API：<a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → Settings → Privacy → 关 "Help improve Claude"</li>
+            <li>Cursor：Settings → General → <strong>Privacy Mode 必开</strong></li>
+            <li>Copilot：<a href="https://github.com/settings/copilot" target="_blank">github.com/settings/copilot</a> → 关 "Allow code snippet upload"</li>
+            <li>公司内部 Clawnova：本地部署，数据不出公司</li>
+          </ul>
+          <p>详细见安装后的 <code>references/anti-distillation-policy.md</code>。</p>
+        </div>
+      </details>
+
+      <div class="install-log" id="devDnaLog"></div>
+    </div>
+
+    <div class="install-card share-card" style="border-left: 3px solid var(--sys-purple);">
+      <h3>💪 GSD 框架 · Get Shit Done（v1.7.39 起换上游版）</h3>
+      <p class="hint">
+        来自 <a href="https://github.com/gsd-build/get-shit-done" target="_blank"><code>gsd-build/get-shit-done</code></a>（59 个 gsd-* skill 的 spec-driven development 框架）。
+        不再是简单任务清单 —— 是<strong>让 Claude Code 做真项目</strong>的上下文工程层：
+        new-project → milestone → discuss-phase → plan-phase → execute-phase → ship，全程托管 context 不烂掉。
+      </p>
+      <p class="hint" style="font-size: 12px;">
+        ⚠️ 依赖 <strong>Node.js</strong>（npx）。<br>
+        装到 <code>~/.claude/skills/gsd-*/</code>，与团队规范 skill 共存不冲突。<br>
+        老版「任务清单 GTD 简版」（v1.7.32~38 的 <code>~/.claude/skills/gsd/</code>）卸载时可一起删。
+      </p>
+
+      <div class="tixuebj-status" id="gsdStatus">检查中…</div>
+
+      <div class="dist-buttons" style="margin-top: 10px;">
+        <button id="gsdInstallBtn" class="btn btn-primary" style="background: linear-gradient(135deg, var(--sys-purple), var(--sys-indigo));">🚀 一键装（npx）</button>
+        <button id="gsdCopyCmdBtn" class="btn btn-ghost">📋 复制安装命令</button>
+        <button id="gsdUninstallBtn" class="btn btn-ghost danger">🗑 卸载全部 gsd-*</button>
+      </div>
+      <p class="hint" style="margin-top: 8px; font-size: 12px;">
+        💡 安装命令（自己开终端跑也行）：<br>
+        <code style="user-select: all;">npx --yes get-shit-done-cc@latest --claude --global</code>
+      </p>
+
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 0.5px solid var(--separator);">
+        <p class="hint" style="font-size: 12.5px;">
+          <strong>🇨🇳 中文版命令参考</strong>（v1.7.42 新加）<br>
+          装一份独立 <code>gsd-help-zh</code> skill，敲 <code>/gsd-help-zh</code> 出 760 行中文命令参考。
+          不动上游 <code>gsd-help</code>（英文），双语并存。
+        </p>
+        <div id="gsdHelpZhStatus" class="tixuebj-status" style="margin-top: 6px;">检查中…</div>
+        <div class="dist-buttons" style="margin-top: 8px;">
+          <button id="gsdHelpZhInstallBtn" class="btn btn-primary btn-sm">🇨🇳 装中文版 help</button>
+          <button id="gsdHelpZhUninstallBtn" class="btn btn-ghost btn-sm danger">🗑 卸载中文版</button>
+        </div>
+      </div>
+
+      <div class="install-log" id="gsdLog"></div>
+    </div>
+
+    </div><!-- /subpage:advanced -->
+
+    <!-- ===== 打包分发 ===== -->
+    <div class="subpage" data-sub="distrib">
+
+    <div class="install-card share-card">
+      <h3>📦 打包分发给他人</h3>
+      <p class="hint"><strong>推荐 DMG</strong>：macOS 原生磁盘镜像，挂载即用，签名不会被传输破坏。zip 兼容更多系统但偶发签名损坏。都含完整 Team Standards.app + 自定义 Skill。</p>
+      <div class="dist-buttons">
+        <button id="downloadDMGBtn" class="btn btn-primary btn-lg">💽 生成 DMG（推荐）</button>
+        <button id="downloadZipBtn" class="btn btn-ghost btn-lg">📦 生成 zip（兼容）</button>
+        <button id="downloadShellBtn" class="btn btn-ghost btn-lg">📜 生成 Shell（终极）</button>
+      </div>
+      <p class="hint" style="margin-top:10px; font-size:12px;">
+        <strong>Shell</strong>：自解压 .sh 文件，对方 <code>chmod +x && ./xxx.sh</code> 直接装 skill，<strong>完全不需要 App</strong>。
+        适用场景：对方机器无法打开 App（macOS 太旧 / 禁装未签名 / 没有 Apple Silicon）。
+      </p>
+      <div class="install-log" id="downloadLog"></div>
+    </div>
+
+    <div class="install-card share-card">
+      <h3>⚠️ DMG 安装后打不开？必读</h3>
+      <p class="hint">
+        首次双击 .app 报"已损坏" / "未受信任开发者"，是 macOS Gatekeeper 给未签名 App 加的隔离属性。
+        ad-hoc 签名不能解决，必须手动清：
+      </p>
+      <p style="font-family:ui-monospace,Menlo,monospace; font-size:13px; padding:10px; background:rgba(255,149,0,0.10); border-radius:8px; user-select:all; border:0.5px solid rgba(255,149,0,0.30);">
+        xattr -cr /Applications/Team\ Standards.app
+      </p>
+      <p class="hint" style="font-size:12px;">
+        <strong>解释</strong>：<code>xattr -cr</code> 递归清除 com.apple.quarantine 等扩展属性。<br>
+        <strong>路径不对怎么办</strong>：把 <code>/Applications/Team\ Standards.app</code> 换成 .app 实际所在路径（含空格用 <code>\</code> 转义或加引号）。
+      </p>
+    </div>
+
+    <!-- v1.7.6: 🧪 Go Unit Test Skill 卡片已按用户要求删除；
+         后端 /api/unit-test/* 路由与 unittest_install.go 保留 -->
+
+    <div class="install-card share-card" style="border-left: 3px solid var(--sys-purple);">
+      <h3>📡 Claude Desktop / Cowork 直装（自动探测路径）</h3>
+      <p class="hint">
+        Claude Desktop 和 Cowork 的 skill 目录跟 Claude Code 不同。
+        App 自动探测系统中可能的位置 + 扫一遍 <code>~/Library/</code> 里所有 Anthropic 相关目录，列出来让你勾选**直接覆盖装**进去。
+      </p>
+      <p class="hint" style="font-size: 12px; background: rgba(175,82,222,0.08); padding: 8px 10px; border-radius: 6px; margin-top: 8px;">
+        ⚠️ <strong>路径准确性诚实声明</strong>：作者没在装好 Cowork 的机器上验证过具体目录名，候选基于 macOS App Data 标准位置 + Anthropic 命名习惯推测。
+        优先勾选「父目录存在 ✓」+「可写 ✓」的候选；不确定可参考下面扫到的 Anthropic 目录手填。
+      </p>
+      <div class="dist-buttons" style="margin-top:10px;">
+        <button id="coworkProbeBtn" class="btn btn-primary">🔍 探测路径</button>
+        <button id="coworkInstallBtn" class="btn btn-primary" disabled style="background: var(--sys-purple);">📥 安装到勾选路径</button>
+      </div>
+      <div id="coworkProbeResult" style="margin-top: 12px;"></div>
+      <div class="install-log" id="coworkInstallLog"></div>
+    </div>
+
+    <div class="install-card share-card">
+      <h3>📤 给 Claude Desktop（claude.ai 网页 / 桌面 App）用 · zip 上传方式</h3>
+      <p class="hint">Claude Desktop 的 <code>Customize → Skills → +</code> 支持两种导入：<strong>上传 zip</strong>（完整，含 references/demos）或 <strong>Editor 里粘贴 SKILL.md</strong>（轻量）。</p>
+
+      <div class="skill-export-row">
+        <div class="skill-export-name">📚 <strong>go-team-standards</strong> <span class="skill-export-desc">Go 团队编码规范</span></div>
+        <button class="btn btn-primary btn-sm cd-zip-btn" data-skill="go-team-standards">📦 zip</button>
+        <button class="btn btn-ghost btn-sm cd-md-btn" data-skill="go-team-standards">📋 SKILL.md</button>
+      </div>
+      <div class="skill-export-row">
+        <div class="skill-export-name">🐱 <strong>orangecat</strong> <span class="skill-export-desc">提测文档生成器（给 QA 看）</span></div>
+        <button class="btn btn-primary btn-sm cd-zip-btn" data-skill="orangecat">📦 zip</button>
+        <button class="btn btn-ghost btn-sm cd-md-btn" data-skill="orangecat">📋 SKILL.md</button>
+      </div>
+      <div class="skill-export-row">
+        <div class="skill-export-name">🧬 <strong>dev-dna</strong> <span class="skill-export-desc">个人开发档案（跨电脑无缝迁移）</span></div>
+        <button class="btn btn-primary btn-sm cd-zip-btn" data-skill="dev-dna">📦 zip</button>
+        <button class="btn btn-ghost btn-sm cd-md-btn" data-skill="dev-dna">📋 SKILL.md</button>
+      </div>
+      <!-- v1.7.6: go-unit-test 导出行按用户要求删除 -->
+
+      <p class="hint" style="margin-top:10px; font-size:12px;">
+        <strong>zip 方式</strong>：完整带所有 reference / template 文件 · <strong>粘贴方式</strong>：仅主 SKILL.md，轻量但不带附带文件
+      </p>
+      <div class="install-log" id="cdLog"></div>
+    </div>
+
+    </div><!-- /subpage:distrib -->
+  </section>
+
+</main>
+
+<!-- ========== 规范详情弹窗 ========== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 id="modalTitle">规则详情</h2>
+        <div class="modal-sub" id="modalSub"></div>
+      </div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <pre class="markdown-box" id="modalContent">加载中…</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 欢迎页（首次启动 / 大版本升级后显示）========== -->
+<div class="modal-overlay" id="welcomeOverlay" style="z-index:2000;display:none;align-items:center;justify-content:center;">
+  <div class="modal" style="max-width:480px;text-align:center;padding:48px 40px 36px;">
+    <div style="font-size:52px;margin-bottom:16px;">👏</div>
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">欢迎尊贵的用户使用本 App</h2>
+    <p style="color:var(--text-secondary,#666);font-size:14px;margin-bottom:28px;" id="welcomeVersionNote"></p>
+    <button class="btn btn-primary" id="welcomeCloseBtn" style="min-width:120px;font-size:15px;">开始使用 🚀</button>
+  </div>
+</div>
+
+<script src="fs-local.js"></script>
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+---
+description: 写技术文档时强制激活团队规范（Cursor 引擎层 glob 触发，不依赖模型决策）
+alwaysApply: false
+globs:
+  - "**/*.md"
+  - "**/*.markdown"
+---
+
+# 写技术文档（.md / .markdown）时必读
+
+> v1.7.22 加入。这条规则用 Cursor 的 `globs` 机制，**只要你打开任何 .md 文件就强制激活**，
+> 不依赖模型对 SKILL.md description 的解读。比 v1.7.19 的纯 description 触发更可靠。
+
+## 你正在写什么类型的文档？
+
+按文件名 / 第一段标题 / 你刚问的问题判断。
+
+| 文档类型 | 必读 reference | 关键约束 |
+|---|---|---|
+| 技术方案 / RFC / 设计文档 | `references/tech-design-example.md`（50K 完整范例） | 章节顺序：背景 → 现状 → 方案 → DB 设计 → 接口 → 异常处理 → 上线 → 风险 |
+| 接口文档 / API doc | `references/api-doc-example.md` + `references/api-design.md` | 路径风格、错误码、分页参数、HTTP 状态码统一 |
+| 数据库设计 / 表结构 / schema | `references/database.md` + `references/naming-logging.md` + `references/全局统一字段命名规范.md` | 主键 BIGINT、`_at` 时间字段、软删 `deleted_at`、禁外键、`uid` 而非 `user_id` |
+| 提测文档 | `references/tixuebj-template-simple.md`（手填）或 orangecat（自动） | 接口/SQL/脚本影响/自测报告 4 段不可少 |
+| 会议纪要 / 复盘 | `references/meeting-minutes.md` | 议程 + 讨论 + 决议 + 行动项（带 owner / due） |
+| 部署清单 / 上线文档 | `references/deployment-checklist.md` | 镜像 / 回滚 / 发布顺序 / 风险 |
+| Code Review 文档 | `references/code-review.md` | 三档评审 + MR 描述模板 + 阻断项 |
+| 特性开关 / 灰度发布 | `references/feature-flags.md` | 部署与发布解耦 / 默认 OFF / 清理机制 |
+
+## 字段命名（写到表 / 接口 / Schema 时一律遵守）
+
+引用 `references/全局统一字段命名规范.md` v1.0.1：
+
+- 用户主体字段一律 `uid`（**禁** `user_id` / `userId` / `member_id`）
+- 软删除一律 `deleted_at TIMESTAMPTZ`（**禁** `is_deleted` BOOLEAN）
+- 时间一律 `_at` 后缀 + `TIMESTAMPTZ(6)` UTC
+- 金额一律带业务前缀（`order_amount` / `fee_amount`），**禁裸** `amount`
+- 业务版本字段必须前缀（`rule_version` / `formula_version`），裸 `version` 保留乐观锁
+- 布尔列必须 `is_` 开头（`is_deposit_enabled`、不是 `deposit_enabled`）
+
+## 触发反馈协议（必须）
+
+每次按本规则产出内容（无论聊天还是文档编辑）：
+
+- **聊天回复末尾**：单独一行打 🌟（无前后文字）
+- **生成的 .md 文档第一行 frontmatter 后**加注释 ：
+  ```html
+  <!-- [skill: go-team-standards · <子规范>] 一句话功能 -->
+  ```
+  例：`<!-- [skill: go-team-standards · 数据库设计 · 命名规范] 用户中台 - users 表设计 -->`
+
+## 禁止行为
+
+- ❌ 看到用户在写 .md 当成"普通问答"回答
+- ❌ "我帮你写一份技术方案" 不读 tech-design-example.md
+- ❌ 写表结构不读 database.md（容易让接收方拿到不带 `uid` / 不带 `_at` 的方案）
+- ❌ 写接口文档不读 api-design.md
