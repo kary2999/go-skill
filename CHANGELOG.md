@@ -4,6 +4,14 @@
 
 ---
 
+## [1.8.16] — 2026-06-12
+
+### Added
+- 安装 tab 新增「VSCode AI 扩展」卡片：一键为 Copilot / Cline / Roo / Continue / Windsurf / Gemini 生成 AGENTS.md + 各家入口文件（项目级）
+
+### Removed
+- 删除「测试 Skill 有效性」功能（tab + 后端 eval/providers + Clawnova 配置）
+
 ## [1.8.15] — 2026-06-12
 
 ### Security
