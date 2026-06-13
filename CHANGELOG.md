@@ -4,6 +4,11 @@
 
 ---
 
+## [1.8.17] — 2026-06-12
+
+### Fixed
+- 规范云端同步改用 GitHub commits Atom feed 检查更新，避开 api.github.com 未认证 60 次/小时限流（之前频繁点会 403）。下载仍走 codeload archive，均不吃 API 限额
+
 ## [1.8.16] — 2026-06-12
 
 ### Added

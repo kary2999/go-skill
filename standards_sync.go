@@ -22,9 +22,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
+
+// 从 GitHub commits Atom feed 里提取 40 位 commit SHA
+var reCommitSHA = regexp.MustCompile(`[Cc]ommit/([0-9a-f]{40})`)
 
 // ---------- 配置存储 ----------
 
@@ -261,25 +265,24 @@ func fetchLatestCommitSHA(repoURL, branch string) (string, error) {
 		return "", err
 	}
 	if strings.Contains(host, "github.com") {
-		apiURL := fmt.Sprintf("https://api.github.com/repos/%s/commits?sha=%s&per_page=1",
-			project, url.QueryEscape(branch))
-		body, status, err := standardsHTTPGet(apiURL)
+		// 用 commits 的 Atom feed（走 github.com 主站），避免 api.github.com
+		// 未认证 60 次/小时的严格限流。feed 第一个 entry 即最新 commit。
+		feedURL := fmt.Sprintf("https://github.com/%s/commits/%s.atom",
+			project, url.PathEscape(branch))
+		body, status, err := standardsHTTPGet(feedURL)
 		if err != nil {
 			return "", err
 		}
 		if status != 200 {
-			return "", fmt.Errorf("GitHub API 返回 %d (仓库不存在或私有？)：%s", status, truncate(string(body), 200))
+			return "", fmt.Errorf("GitHub 返回 %d (仓库不存在或私有？)：%s", status, truncate(string(body), 200))
 		}
-		var commits []struct {
-			SHA string `json:"sha"`
+		// entry id 形如 tag:github.com,2008:Grit::Commit/<40位sha>，
+		// 或 link href .../commit/<40位sha>
+		m := reCommitSHA.FindSubmatch(body)
+		if m == nil {
+			return "", fmt.Errorf("无法从 atom feed 解析 commit（仓库空或格式变化）")
 		}
-		if err := json.Unmarshal(body, &commits); err != nil {
-			return "", fmt.Errorf("解析 commits 失败: %w", err)
-		}
-		if len(commits) == 0 {
-			return "", fmt.Errorf("仓库 %s 分支 %s 没 commit", project, branch)
-		}
-		return commits[0].SHA, nil
+		return string(m[1]), nil
 	}
 	encProject := url.PathEscape(project)
 	apiURL := fmt.Sprintf("%s/api/v4/projects/%s/repository/commits?ref_name=%s&per_page=1",
