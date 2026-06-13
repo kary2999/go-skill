@@ -472,18 +472,6 @@
       <div class="install-log" id="agentsInitLog" style="margin-top:8px;"></div>
     </div>
 
-    <!-- 通用 Agent 适配 -->
-    <div class="install-card" style="border-left: 3px solid var(--sys-teal, #30b0c7); margin-bottom: 20px;">
-      <h3 style="margin-top:0;">🌐 通用 Agent 适配</h3>
-      <p class="hint">让 VSCode 里所有 AI 插件都用上团队规范：在项目根目录生成 <code>AGENTS.md</code>（事实标准，Codex / Copilot / Cline / Roo / Cursor 都读），并为 <strong>GitHub Copilot · Cline（DeepSeek 等模型）· Roo Code · Windsurf · Continue · Gemini · Claude Code</strong> 各生成一个指向 AGENTS.md 的入口文件。规范只维护一份，已存在的文件不覆盖。</p>
-      <div style="display:flex; gap:8px; align-items:center; margin-top:10px;">
-        <input id="universalPath" class="path-input" type="text" placeholder="输入项目根目录路径，如 /Users/me/myproject" style="flex:1;" />
-        <button class="btn btn-ghost btn-sm" id="universalBrowse">📁 选目录</button>
-        <button class="btn btn-primary btn-sm" id="universalBtn">一键适配全部 Agent</button>
-      </div>
-      <div class="install-log" id="universalLog" style="margin-top:8px;"></div>
-    </div>
-
     <!-- 提示词分组 -->
     <div class="section-label" style="margin: 8px 0 10px;">🚀 项目启动</div>
 
@@ -892,6 +880,19 @@
 
       <button id="installBtn" class="btn btn-primary btn-lg">⚡ 立即安装（覆盖已有）</button>
       <div class="install-log" id="installLog"></div>
+    </div>
+
+    <!-- VSCode AI 扩展适配（项目级） -->
+    <div class="install-card" style="border-left: 3px solid var(--sys-teal, #30b0c7);">
+      <h3 style="margin-top:0;">🌐 VSCode AI 扩展（任意模型）</h3>
+      <p class="hint">上面的目标是全局安装到 Claude / Cursor / Codex。VSCode 里的其它 AI 扩展按<strong>项目</strong>读规范——选中项目目录，一键生成 <code>AGENTS.md</code>（事实标准）+ 各家入口文件，指向同一份规范：<br>
+        <strong>GitHub Copilot · Cline（可接 DeepSeek 等模型）· Roo Code · Windsurf · Continue · Gemini · Claude Code</strong>。已存在的文件不覆盖。</p>
+      <div style="display:flex; gap:8px; align-items:center; margin-top:10px;">
+        <input id="universalPath" class="path-input" type="text" placeholder="选择项目根目录，如 /Users/me/myproject" style="flex:1;" />
+        <button class="btn btn-ghost btn-sm" id="universalBrowse">📁 选目录</button>
+        <button class="btn btn-primary btn-sm" id="universalBtn">一键适配 VSCode 扩展</button>
+      </div>
+      <div class="install-log" id="universalLog" style="margin-top:8px;"></div>
     </div>
 
     </div><!-- /subpage:basic -->
