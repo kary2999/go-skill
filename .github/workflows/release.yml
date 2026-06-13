@@ -48,11 +48,7 @@ jobs:
 
       - name: 构建 Team Standards.app（Universal Binary）
         if: steps.ver.outputs.skip == 'false'
-        run: |
-          # defaults_local.go 在 .gitignore（本地开发可内嵌 key）。
-          # 公开发布的 DMG 禁止内嵌任何 key —— 用空 key 模板编译，用户在 App 里自行填写。
-          cp defaults_local.go.example defaults_local.go
-          bash build-mac-app.sh
+        run: bash build-mac-app.sh
 
       - name: 打包 DMG
         if: steps.ver.outputs.skip == 'false'

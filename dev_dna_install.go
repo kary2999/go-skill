@@ -33,15 +33,13 @@ func devDNAUserProfilePath() (string, error) {
 	return filepath.Join(dir, devDNAProfileLocal), nil
 }
 
-// teamStandardsAppDataDir 抽出公共的应用配置目录函数（也被 orangecat / eval-config 用）
-// 注意：如果未来重构，把 orangecatUserTemplatePath 也迁过来用这个
+// teamStandardsAppDataDir 应用配置目录：~/Library/Application Support/TeamStandards
 func teamStandardsAppDataDir() (string, error) {
-	// 复用 evalConfigPath 同样的逻辑（macOS Library/AppSupport/TeamStandards）
-	p, err := evalConfigPath()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Dir(p), nil
+	return filepath.Join(home, "Library", "Application Support", "TeamStandards"), nil
 }
 
 func devDNAUserProfileExists() bool {

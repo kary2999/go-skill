@@ -116,10 +116,6 @@
       <span class="navicon">⚡</span><span>Superpowers</span>
       <span class="count" id="superpowersCount">–</span>
     </button>
-    <button class="navitem" data-tab="eval">
-      <span class="navicon">🧪</span><span>测试 Skill</span>
-      <span class="count" id="evalCount">–</span>
-    </button>
     <button class="navitem" data-tab="hooks-guard">
       <span class="navicon">🔒</span><span>强制约束</span>
       <span class="nav-badge" id="hooksEnabledCount" style="display:none;"></span>
@@ -621,77 +617,6 @@
     </div>
 
     <div class="logs-list" id="logsList"></div>
-  </section>
-
-  <!-- ========== 测试 Skill ========== -->
-  <section class="tab-panel" id="tab-eval">
-    <div class="page-head">
-      <h1>🧪 测试 Skill 有效性</h1>
-      <p>自动跑 <span id="evalTotalCases">–</span> 条违规代码用例，调 Claude API 检查 SKILL.md + references 是否让 AI 正确识别并按团队规范反馈。prompt caching 让 20 条批量跑只按 1 次 full input 计费。</p>
-    </div>
-
-    <div class="install-card" style="max-width: 960px;">
-      <h3>1. AI 配置（公司本地大模型 · Clawnova）</h3>
-      <p class="hint" style="font-size:12px;">
-        Skill 测试统一走公司内部 OpenAI 兼容服务 <code id="evalProviderName">Clawnova</code>。
-        Key 保存到 <code>~/Library/Application Support/TeamStandards/eval-config.json</code>（权限 0600，仅本人可读，不进 git）。
-      </p>
-
-      <label>
-        <span class="lbl">API Base</span>
-        <input type="text" id="evalApiBase" class="input" value="https://clawnova.ai/api/v1">
-        <small>OpenAI 兼容端点。一般不动，除非走代理。</small>
-      </label>
-
-      <label>
-        <span class="lbl">API Key <em>*</em></span>
-        <input type="password" id="evalKey" class="input" placeholder="kgb_... （从 IDP 平台领取）">
-        <small id="evalKeyHint">已存的 key 显示星号化预览：<code id="evalKeyMasked">未配置</code>。粘新 key 会覆盖。</small>
-      </label>
-
-      <div class="form-grid">
-        <label>
-          <span class="lbl">模型</span>
-          <select id="evalModel" class="input"></select>
-        </label>
-        <label>
-          <span class="lbl">温度</span>
-          <input type="number" id="evalTemp" class="input" value="0" min="0" max="1" step="0.1">
-        </label>
-      </div>
-
-      <div class="dist-buttons" style="margin-top:8px;">
-        <button id="evalConfigSaveBtn" class="btn btn-primary">💾 保存配置</button>
-        <button id="evalConfigClearBtn" class="btn btn-ghost danger">🗑 清除已存 Key</button>
-        <button id="evalTestConnBtn" class="btn btn-ghost">🔌 测试连接</button>
-      </div>
-      <div class="install-log" id="evalConfigLog"></div>
-
-      <h3 style="margin-top:20px;">2. 运行 Skill 测试（需先保存配置）</h3>
-      <div class="dist-buttons">
-        <button id="evalPingBtn" class="btn btn-ghost btn-lg">🔌 先跑 1 条测连通</button>
-        <button id="evalRunBtn" class="btn btn-primary btn-lg">🚀 运行全部 API 测试</button>
-      </div>
-
-      <h3 style="margin-top: 24px;">🆓 无需 API Key 的方案</h3>
-      <p class="hint" style="font-size:12px;">两种无额度消耗的本地测试：</p>
-      <div class="dist-buttons">
-        <button id="evalLintBtn" class="btn btn-ghost btn-lg">🔍 SKILL 结构自检</button>
-        <button id="evalExportBtn" class="btn btn-ghost btn-lg">📋 导出测试 prompt</button>
-      </div>
-      <p class="hint" style="font-size:12px; margin-top:8px;">
-        <b>🔍 结构自检</b>：扫描已装的 SKILL.md / references，毫秒完成，检查 12 条铁律 + 路由表 + 自定义规则是否完整。<br>
-        <b>📋 导出 prompt</b>：生成 md 文件含 20 个违规代码，粘进你自己的 Cursor / Claude Code 聊天（团队 skill 已装好的那个），人工看 AI 反应。<strong>日常工作场景测试，最真实</strong>。
-      </p>
-      <p class="hint" style="margin-top:8px;font-size:12px;">建议先点「🔌 测连通」跑 1 条，确认 API key 和模型能正常响应，再跑全部 20 条。</p>
-      <div class="install-log" id="evalLog"></div>
-    </div>
-
-    <div id="evalReport" class="eval-report" style="display:none;">
-      <h3>测试报告</h3>
-      <div class="eval-summary" id="evalSummary"></div>
-      <div class="eval-cases" id="evalCases"></div>
-    </div>
   </section>
 
   <!-- ========== 新建项目 ========== -->

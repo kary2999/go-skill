@@ -61,8 +61,6 @@ func staticExportTargets() []string {
 		"/api/dev-dna/status",
 		"/api/commit-guard/status",
 		"/api/commit-guard/scripts",
-		"/api/eval/cases",
-		"/api/eval/config",
 		"/api/logs",
 	}
 	// 规范原文：standards/*.md 全量快照（卡片点开时按 file= 读取）

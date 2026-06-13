@@ -92,16 +92,6 @@ func newMux() *http.ServeMux {
 	api("POST /api/save-dmg", handleSaveDMG)
 	api("POST /api/save-shell", handleSaveShell)
 	api("POST /api/reveal", handleReveal)
-	// Skill 评估
-	api("GET /api/eval/cases", handleEvalCases)
-	api("POST /api/eval/run", handleEvalRun)
-	api("POST /api/eval/lint-skill", handleEvalLintSkill)
-	api("POST /api/eval/export-prompts", handleEvalExportPrompts)
-	// v1.7.10: 单一 clawnova 配置持久化 + 测试连接
-	api("GET /api/eval/config", handleEvalConfigGet)
-	api("POST /api/eval/config", handleEvalConfigSave)
-	api("DELETE /api/eval/config/key", handleEvalConfigClearKey)
-	api("POST /api/eval/test-connection", handleEvalTestConnection)
 	// 脚手架
 	api("GET /api/scaffold/check-template", handleScaffoldCheckTemplate)
 	api("POST /api/scaffold/pick-folder", handleScaffoldPickFolder)
