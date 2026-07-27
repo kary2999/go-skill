@@ -512,7 +512,7 @@ func handleReference(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid file", nil)
 		return
 	}
-	b, err := readEmbedFile("standards/" + file)
+	b, err := readReferenceFile(file)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "reference not found", err)
 		return
@@ -520,4 +520,21 @@ func handleReference(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{
 		"file": file, "content": string(b),
 	})
+}
+
+// readReferenceFile 读规范原文：优先磁盘 references/（安装 / 云同步后的真实内容，
+// 保证云同步拉来的新规范、以及 scanExtraReferences 扫出的磁盘文件都能点开），
+// 磁盘没有再回退到内嵌种子。file 已由调用方校验不含 .. 和 /。
+func readReferenceFile(file string) ([]byte, error) {
+	if home, e := os.UserHomeDir(); e == nil {
+		for _, base := range []string{
+			filepath.Join(home, ".claude", "skills", "go-team-standards", "references"),
+			filepath.Join(home, ".cursor", "skills-cursor", "go-team-standards", "references"),
+		} {
+			if b, e := os.ReadFile(filepath.Join(base, file)); e == nil {
+				return b, nil
+			}
+		}
+	}
+	return readEmbedFile("standards/" + file)
 }

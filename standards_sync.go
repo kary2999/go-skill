@@ -399,6 +399,30 @@ func writeStandardsToReferences(files map[string][]byte) (changed []string, err 
 			rel := name + " → " + dir
 			changed = append(changed, rel)
 		}
+
+		// 镜像清理：删除远端已移除的遗留 .md/.png，避免规范模块列出磁盘上
+		// 已废弃的旧文件（catalog 扫磁盘 → 点开却读不到 → 报错）。
+		// 保留用户自定义的 custom-* 文件。
+		if entries, e := os.ReadDir(dir); e == nil {
+			for _, ent := range entries {
+				if ent.IsDir() {
+					continue
+				}
+				n := ent.Name()
+				if strings.HasPrefix(n, "custom-") {
+					continue
+				}
+				if !strings.HasSuffix(n, ".md") && !strings.HasSuffix(n, ".png") {
+					continue
+				}
+				if _, ok := files[n]; ok {
+					continue // 远端仍有此文件
+				}
+				if err := os.Remove(filepath.Join(dir, n)); err == nil {
+					changed = append(changed, "🗑 清理遗留 "+n+" ← "+dir)
+				}
+			}
+		}
 	}
 	return changed, nil
 }

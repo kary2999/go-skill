@@ -4,6 +4,14 @@
 
 ---
 
+## [1.8.18] — 2026-06-12
+
+### Fixed
+- 修复规范模块点开文件失败（invalid file / not found）：
+  - handleReference 改为优先读磁盘 references/（云同步 / 安装后的真实内容），回退内嵌 —— 云同步拉来的规范现在能正常点开
+  - DevDefender 等磁盘绝对路径 skill 点开：前端按路径形态分流到 skill-disk-file，不再误走 /api/reference 被拒
+- 云端同步改为镜像模式：删除远端已移除的遗留 .md/.png（保留用户 custom-*），清理旧版残留缓存
+
 ## [1.8.17] — 2026-06-12
 
 ### Fixed

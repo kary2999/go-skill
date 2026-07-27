@@ -360,11 +360,11 @@
     document.getElementById('modalContent').textContent = '加载中…';
     document.getElementById('modalOverlay').classList.add('show');
 
-    // 三种 source 分别走不同 endpoint：
-    //   hardcoded / ref-auto → /api/reference?file=<basename>（embedded 或同步过来的）
-    //   gsd-framework        → /api/skill-disk-file?path=<absolute path>（磁盘上）
+    // 按 reference 形态分流（不再按 source 名单，避免漏掉 DevDefender 等磁盘 skill）：
+    //   绝对路径（/开头）  → /api/skill-disk-file?path=<abs>（gsd-framework / team-standards 等磁盘 skill）
+    //   纯文件名           → /api/reference?file=<basename>（磁盘 references/ 优先，回退内嵌）
     let fetchURL;
-    if (skill.source === 'gsd-framework') {
+    if (skill.reference && skill.reference.charAt(0) === '/') {
       document.getElementById('modalSub').textContent = skill.reference;
       fetchURL = '/api/skill-disk-file?path=' + encodeURIComponent(skill.reference);
     } else {
