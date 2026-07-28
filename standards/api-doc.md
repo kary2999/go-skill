@@ -43,6 +43,9 @@ https://{host}/{service}/{resource}[/{id}][/{sub-resource}][/{action}]
 - 不得用 `/getUserList`、`/createOrder` 等动词接口名
 - 不得使用大写、下划线、空格
 - 路径参数不得含敏感信息（手机号、证件号、Token）
+- **不得在路径里体现业务主域名**（`earn` / `spot` / `perp` / `c2c` 等）。主域由 `service` 段或网关路由承载，`resource` 只写资源本身：
+  - ❌ `/earn/orders`、`/api/v1/earn/products`、`/spot/trades`
+  - ✅ `/api/v1/orders`、`/api/v1/products`（属于哪个主域由网关按 `service` 路由决定）
 
 ### 网关→后端（内部路由）
 

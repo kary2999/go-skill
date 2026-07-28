@@ -1,0 +1,23 @@
+---
+description: Order ID / distributed primary key must use UUIDv7 (via common-lib idgen)
+globs: **/*.go, migrations/**, **/*.sql
+alwaysApply: false
+---
+
+# 订单号 / 分布式 ID 规范
+
+## 核心
+- 订单号及所有分布式主键 **一律 UUIDv7**（RFC 9562，时间有序）
+- Go 用 `github.com/google/uuid` 的 `NewV7()`，**封装到 common-lib 的 `idgen` 包**，业务代码禁止裸调用
+- PG 主键列类型用原生 `uuid`（非 varchar），ID 由**应用层生成**，不用 `gen_random_uuid()` 默认值
+
+## 禁止
+- ❌ 数据库自增（IDENTITY / AUTO_INCREMENT）
+- ❌ 雪花算法 / 自研发号器
+- ❌ `order_no` 顺序号 / 日期拼计数器
+- ❌ UUIDv4（无序，作主键写放大）
+
+## 可读号
+- 需人类可读订单号时，另加 `order_ref` 展示字段，与主键 `order_id` 解耦；展示号不作主键、不参与关联
+
+字段命名仍遵循命名规范：`order_id` / `client_order_id` / `parent_order_id`。

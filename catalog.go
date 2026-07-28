@@ -93,6 +93,12 @@ var skills = []Skill{
 		Triggers: []string{"特性开关 / feature flag", "灰度 / 发布 / 回滚", "PR / MR / 分支策略"},
 		Reference: "feature-flags.md", Scope: "conditional",
 	},
+	{
+		ID: "id-generation", Title: "订单号 / 分布式 ID",
+		Description: "订单号及分布式主键一律 UUIDv7；禁止自增 / 雪花 / 顺序号；common-lib idgen 封装 + PG uuid 主键",
+		Triggers:  []string{"生成订单号 / ID", "定义主键", "**/*.go"},
+		Reference: "id-generation.md", Scope: "conditional",
+	},
 }
 
 // ============================================================
