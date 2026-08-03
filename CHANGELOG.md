@@ -4,6 +4,18 @@
 
 ---
 
+## [1.9.1] — 2026-06-13
+
+### Added
+- 版本升级时自动拉取规范同步：升级过程中后台异步拉取最新规范，无需手动触发「拉取最新规范」
+- database.md 规范优化三条：
+  1. 小值域字段范围扩大：所有 ≤20 值的字段(status/type/is_*/has_*)一律 SMALLINT，禁止 ENUM/BOOLEAN/VARCHAR 混用
+  2. 小值域编码 1-20(保留 0 兜底)：布尔改为 1/2 而非 0/1（1=true/yes 2=false/no 0=unknown）
+  3. 后台业务操作表强制审计人：created_by/updated_by VARCHAR(64) 记录操作人身份，便于溯源
+
+### Changed
+- standards_sync.go: 规范同步核心逻辑抽离为 doStandardsSyncPull()，HTTP handler 和升级流程均可调用
+
 ## [1.8.19] — 2026-06-12
 
 ### Added

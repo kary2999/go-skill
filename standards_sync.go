@@ -537,52 +537,53 @@ func handleStandardsSyncCheck(w http.ResponseWriter, r *http.Request) {
 
 // POST /api/standards-sync/pull
 // 下载最新 zip → 解压 → 写盘 → 更新 last_synced_sha
-func handleStandardsSyncPull(w http.ResponseWriter, r *http.Request) {
+// doStandardsSyncPull 同步规范的核心逻辑(用于 HTTP handler 和后台触发)
+func doStandardsSyncPull() error {
 	c, err := loadStandardsSyncConfig()
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "load config", err)
-		return
+		return err
 	}
 	if c.RepoURL == "" {
-		writeError(w, http.StatusBadRequest, "尚未配置规范仓库", nil)
-		return
+		return fmt.Errorf("尚未配置规范仓库")
 	}
 	sha, err := fetchLatestCommitSHA(c.RepoURL, c.Branch)
 	if err != nil {
-		writeError(w, http.StatusBadGateway, "拉远端 SHA 失败", err)
-		return
+		return fmt.Errorf("拉远端 SHA 失败: %w", err)
 	}
 	zipData, err := downloadArchiveZip(c.RepoURL, c.Branch)
 	if err != nil {
-		writeError(w, http.StatusBadGateway, "下载 zip 失败", err)
-		return
+		return fmt.Errorf("下载 zip 失败: %w", err)
 	}
 	files, err := extractStandardsFromZip(zipData)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "解 zip 失败", err)
-		return
+		return fmt.Errorf("解 zip 失败: %w", err)
 	}
 	if len(files) == 0 {
-		writeError(w, http.StatusInternalServerError, "zip 内未找到任何 .md/.png 文件", nil)
-		return
+		return fmt.Errorf("zip 内未找到任何 .md/.png 文件")
 	}
-	changed, err := writeStandardsToReferences(files)
+	_, err = writeStandardsToReferences(files)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "写盘失败", err)
-		return
+		return fmt.Errorf("写盘失败: %w", err)
 	}
 	c.LastSyncedSHA = sha
 	c.LastSyncedAt = time.Now()
 	c.LastCheckError = ""
 	_ = saveStandardsSyncConfig(c)
+	return nil
+}
 
+func handleStandardsSyncPull(w http.ResponseWriter, r *http.Request) {
+	err := doStandardsSyncPull()
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "规范同步失败", err)
+		return
+	}
+	c, _ := loadStandardsSyncConfig()
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":            true,
-		"latest_sha":    sha,
-		"files_total":   len(files),
-		"files_changed": len(changed),
-		"changed":       changed,
-		"message":       fmt.Sprintf("已同步 %d 个文件，%d 个变更", len(files), len(changed)),
+		"ok":         true,
+		"latest_sha": c.LastSyncedSHA,
+		"synced_at":  c.LastSyncedAt,
+		"message":    "规范已同步",
 	})
 }
 

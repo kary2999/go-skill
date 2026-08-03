@@ -555,6 +555,11 @@ func performAutoUpgrade() {
 	upgradeProgress.LogPath = logPath
 	upgradeMu.Unlock()
 
+	// 版本升级时自动拉取规范同步（异步，不阻塞升级流程）
+	go func() {
+		_ = doStandardsSyncPull()
+	}()
+
 	pidStr := fmt.Sprintf("%d", os.Getpid())
 	// 第 5 个参数传预挂载路径；helper 若收到则跳过自己的 mount 步骤
 	cmd := exec.Command("/bin/bash", helperPath, pidStr, tmpDMG, currentApp, logPath, mountPath)
