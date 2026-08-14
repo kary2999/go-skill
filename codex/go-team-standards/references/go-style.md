@@ -278,7 +278,9 @@ issues:
 ### 9.1 基本原则
 
 * 注释使用**中文**，同一项目内保持一致
-* 注释应解释 **为什么（Why）**，而非 **做了什么（What）**——代码本身应具备可读性
+* 统一使用 `//` 行注释；**禁止** `/** */` / JavaDoc 块注释（语言虽支持，但不合 godoc 惯例）
+* 行内 / 实现细节注释解释 **为什么（Why）**，而非复述代码
+* 函数 / 方法的文档注释用「方法 / 参数 / 返回」三段结构（见 9.3）
 * 过时的注释比没有注释更有害，修改代码时**必须同步更新注释**
 * 禁止提交被注释掉的代码块，使用 Git 历史追溯
 
@@ -297,7 +299,16 @@ package order
 
 ### 9.3 公开（大写开头）方法注释
 
-所有大写开头的类型、函数、常量、变量属于包的公开 API，**必须**有注释，且以符号名开头（`golint` / `revive` 强制）：
+所有大写开头的类型、函数、常量、变量属于包的公开 API，**必须**有注释，且以符号名开头（`golint` / `revive` 强制）。
+
+类型 / 常量 / 变量：首行 `// Name 一句话职责` 即可，不硬套空「参数/返回」段。
+
+导出函数 / 方法：**必须**使用 `//` + 三段结构：
+
+1. **首行**：`// Name 一句话职责`（必须以标识符名开头）
+2. **方法:**：说清职责与关键行为边界；禁止啰嗦复述代码
+3. **参数:**：逐个说明含义与特殊值语义（空串 / nil 等）
+4. **返回:**：逐个说明成功 / 失败 / 哨兵值含义
 
 ```go
 // OrderStatus 表示订单生命周期状态。
@@ -309,14 +320,33 @@ var ErrOrderNotFound = errors.New("order not found")
 // MaxRetryCount 是提现签名的最大重试次数。
 const MaxRetryCount = 3
 
-// CreateOrder 创建一笔新订单并写入流水。
-// 若余额不足返回 ErrInsufficientBalance；若幂等键冲突返回 ErrDuplicateOrder。
-func (s *OrderService) CreateOrder(ctx context.Context, req *CreateOrderReq) (*Order, error) {
+// replayRedeem 按幂等键回放首次赎回结果。
+//
+// 方法:
+//   先查幂等缓存，未命中再查 orders.client_order_id；
+//   命中成功单则回放 RedeemOut；命中失败单则原样返回首单错误，避免重复扣仓/解冻。
+//
+// 参数:
+//   ctx - 请求上下文（超时 / 链路追踪）
+//   id  - 当前用户身份（platform_id + uid）
+//   key - 客户端幂等键；空串表示不走幂等，直接放行
+//
+// 返回:
+//   *RedeemOut - 命中可回放的首单结果；未命中为 nil（继续主流程）
+//   error      - 缓存/DB 查询失败，或首单已失败时按原错误码返回
+func (s *Service) replayRedeem(ctx context.Context, id Identity, key string) (*RedeemOut, error) {
+```
+
+反例：
+
+```go
+// 处理赎回  // BAD：未以符号名开头，无参数/返回
+func replayRedeem(...)
 ```
 
 ### 9.4 私有（小写开头）方法注释
 
-小写开头的函数/类型仅包内可见，无需强制注释，但以下情况**建议**添加：
+小写开头的函数/类型仅包内可见，无需强制注释，但以下情况**建议**使用与 9.3 相同的三段结构：
 
 * 逻辑复杂度高（圈复杂度 > 10）
 * 包含非显而易见的业务规则或算法
@@ -324,11 +354,19 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *CreateOrderReq) (*O
 
 ```go
 // buildSweepTx 构造归集交易。
-// 对 TRON 链需要先检查 Energy 代理余额，不足时走燃烧模式，
-// 因此返回值中额外携带 energyFrom 标记。
+//
+// 方法:
+//   对 TRON 链先检查 Energy 代理余额，不足时走燃烧模式。
+//
+// 参数:
+//   ctx   - 请求上下文
+//   addrs - 待归集地址列表
+//
+// 返回:
+//   *RawTx - 构造好的原始交易；energyFrom 标记能量来源
+//   error  - 构造失败原因
 func (s *sweepBuilder) buildSweepTx(ctx context.Context, addrs []string) (*RawTx, error) {
 ```
-
 ### 9.5 TODO / FIXME / HACK 标记
 
 使用统一格式，便于 CI 统计和追踪：
@@ -379,6 +417,7 @@ type OrderRepository interface {
 
 | 禁止行为 | 示例  |
 |------|-----|
+| 使用 `/** */` 块注释 | 一律改用 `//` 行注释 |
 | 复述代码的废话注释 | `// 设置 name 为 "foo"` → `name = "foo"` |
 | 注释掉的代码提交 | `// order.Cancel()` 残留在主干 |
 | 用注释替代命名 | 不要写 `var a int // 用户ID`，直接用 `userID` |
