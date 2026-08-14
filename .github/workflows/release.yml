@@ -2,10 +2,13 @@ name: Build DMG Release
 
 on:
   schedule:
-    - cron: '0 2 * * *'   # 每日 10:00 (UTC+8) 检查 VERSION，有新版本自动打包发布
+    - cron: '0 2 * * *'   # 每日 10:00 (UTC+8) 兜底：VERSION 有未发布版本则打包
   workflow_dispatch:        # 手动触发
   push:
-    tags: ['v*']            # 打 tag 立即构建
+    branches: [main]
+    paths:
+      - VERSION            # VERSION 更新并推 main → 自动打包 DMG（已有同版本 Release 则跳过）
+    tags: ['v*']           # 打 tag 立即构建
 
 permissions:
   contents: write

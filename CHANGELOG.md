@@ -8,6 +8,7 @@
 
 ### Changed
 - go-style 注释规范：导出函数/方法强制 `//` +「方法 / 参数 / 返回」三段结构；禁止 `/** */`；Cursor `01-go-style.mdc` 同步
+- GitHub Actions：`VERSION` 推到 `main` 时自动打包并发布 DMG（同版本 Release 已存在则跳过）
 
 ## [1.9.1] — 2026-06-13
 
